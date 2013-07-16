@@ -9,23 +9,24 @@ import com.skplanet.plandasj.Plandasj;
 import com.skplanet.plandasj.PlandasjPool;
 
 @Controller
-public class SimpleController {
+public class PlandasController {
 
 	@Autowired
 	PlandasjPool pPool;
-
-	final String key = "hello";
-	final String value = "Plandas's world";
-
-	@RequestMapping("/simple")
-	public @ResponseBody
-	String simple() {
+	
+	final String key ="hello";
+	final String value ="Plandas's world";
+	
+	@RequestMapping("/plandas")
+	public @ResponseBody String simple() {
+		
 		Plandasj client = pPool.getClient();
 		client.set(key, value);
-
+		
 		String retValue = client.get(key);
-
-		client.del(key);
+		
+		client.decr(key);
+		
 		return retValue;
 	}
 
