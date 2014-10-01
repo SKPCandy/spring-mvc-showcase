@@ -11,14 +11,14 @@
 	
 	<!-- Enables the Spring MVC @Controller programming model -->
 	<annotation-driven conversion-service="conversionService">
-		<argument-resolvers>
+		<!-- <argument-resolvers>
 			<beans:bean class="org.springframework.samples.mvc.data.custom.CustomArgumentResolver"/>
 		</argument-resolvers>
 		<async-support default-timeout="3000">
 			<callable-interceptors>
 				<beans:bean class="org.springframework.samples.mvc.async.TimeoutCallableProcessingInterceptor" />
 			</callable-interceptors>
-		</async-support>
+		</async-support> -->
 	</annotation-driven>
 
 	<!-- Handles HTTP GET requests for /resources/** by efficiently serving up static resources in the ${webappRoot}/resources/ directory -->
