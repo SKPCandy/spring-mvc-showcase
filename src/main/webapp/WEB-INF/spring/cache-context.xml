@@ -1,22 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:context="http://www.springframework.org/schema/context" xmlns:c="http://www.springframework.org/schema/c"
-	xmlns:p="http://www.springframework.org/schema/p" xmlns:cache="http://www.springframework.org/schema/cache"
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:c="http://www.springframework.org/schema/c" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:cache="http://www.springframework.org/schema/cache"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
-        http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd"
-        >
-	<cache:annotation-driven />
+        http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd">
+<!-- 	<cache:annotation-driven />
 
 	<context:property-placeholder location="classpath:/plandas.properties" />
 
-
-	<bean id="plandasjConnectionFactory" class="com.skplanet.spring.data.plandasj.PlandasjConnectionFactory"
+	<bean id="plandasConnectionFactory"
+		class="org.springframework.data.redis.connection.plandas.PlandasConnectionFactory"
 		p:domainName="${domain}" p:serviceCode="${service}" p:authCode="${auth}" />
-		
-	<bean id="plandasjTemplate" class="com.skplanet.spring.data.plandasj.PlandasjTemplate" p:connection-factory-ref="plandasjConnectionFactory" />
+	<bean id="plandasTemplate" class="org.springframework.data.redis.core.PlandasTemplate"
+		p:connection-factory-ref="plandasConnectionFactory" />
+	<bean id="cacheManager"
+		class="org.springframework.data.redis.cache.PlandasCacheManager"
+		 p:template-ref="plandasTemplate" /> -->
 
-	<bean id="cacheManager" class="com.skplanet.spring.data.plandasj.PlandasjCacheManager" p:template-ref="plandasjTemplate" />
-
-</beans >
+</beans>
 

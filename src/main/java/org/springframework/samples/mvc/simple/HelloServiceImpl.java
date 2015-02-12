@@ -3,6 +3,8 @@
  */
 package org.springframework.samples.mvc.simple;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 /**
@@ -12,24 +14,19 @@ import org.springframework.stereotype.Service;
 @Service("helloService")
 public class HelloServiceImpl implements HelloService {
 
-//	@Cacheable(value = "messageCache", condition = "'Joshua'.equals(#name)") //,
+	@Cacheable(value = "messageCache")
 	public String getMessage(String name) {
-		System.out.println("Executing HelloServiceImpl" + ".getHelloMessage(\"" + name + "\")");
-		//DB call 
+		System.out.println("===> Not Cache HelloServiceImpl" + ".getMessage(\"" + name + "\")");
 		return "Hello " + name + "!";
 	}
 
-//	@Cacheable(value = "messageCache01", key="#name") 
-	public String getValuec(String name) {
-		System.out.println("Executing HelloServiceImpl" + ".getHelloMessage(\"" + name + "\")");
-
-		return "Hello " + name + "!";
-	}
-	
-//	@Cacheable(value = "messageCache02", key="#name") 
-	public String getValuec2(String name) {
-		System.out.println("Executing HelloServiceImpl" + ".getHelloMessage(\" horanghi \")");
-
+	@CacheEvict(value = "messageCache")
+	public String evictMessage(String name) {
+		System.out.println("Executing HelloServiceImpl" + ".evictValuec2(\" horanghi \")");
 		return "horanghi";
+	}
+
+	@CacheEvict(value = { "messageCache", "messageCache01", "messageCache02" }, allEntries = true)
+	public void evictAll() {
 	}
 }

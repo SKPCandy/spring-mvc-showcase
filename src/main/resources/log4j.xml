@@ -39,7 +39,7 @@
 	</logger>
 	
 	<logger name="com.skplanet">
-		<level value="info" />
+		<level value="debug" />
 	</logger>
 
 	<logger name="org.I0Itec.zkclient">
