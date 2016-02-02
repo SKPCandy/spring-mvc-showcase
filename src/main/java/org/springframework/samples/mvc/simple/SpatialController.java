@@ -392,6 +392,10 @@ public class SpatialController {
 	@RequestMapping("/index")
 	public void getmap() {
 	}
+	
+	@RequestMapping("/11st")
+	public void getmap2() {
+	}
 
 	@RequestMapping(value = "/loadImg", produces = "application/json; charset=utf8")
 	public @ResponseBody String loadImgJson(@RequestParam(value = "prefix") String prefix,
