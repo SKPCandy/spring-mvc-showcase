@@ -17,17 +17,33 @@
 			-Dcom.sun.management.jmxremote.ssl=false
 			-Dcom.sun.management.jmxremote.authenticate=false
 		</vm-arg>
+		<jackson.version>2.4.4</jackson.version>
 	</properties>
 	<dependencies>
 		<dependency>
-			<groupId>net.minidev</groupId>
-			<artifactId>json-smart</artifactId>
-			<version>2.2.1</version>
+			<!-- Note: core-annotations version x.y.0 is generally compatible with 
+				(identical to) version x.y.1, x.y.2, etc. -->
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+			<version>${jackson.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+		<!-- <dependency> <groupId>com.jayway.jsonpath</groupId> <artifactId>json-path</artifactId> 
+			<version>2.0.0</version> </dependency> <dependency> <groupId>net.minidev</groupId> 
+			<artifactId>json-smart</artifactId> <version>2.2.1</version> </dependency> -->
 		<dependency>
 			<groupId>com.skplanet.mosaic</groupId>
 			<artifactId>plamosaic</artifactId>
-			<version>0.11.0</version>
+			<version>0.12.0-11st-SNAPSHOT</version>
 			<exclusions>
 				<exclusion>
 					<groupId>com.skplanet.plandas</groupId>
@@ -38,7 +54,7 @@
 		<dependency>
 			<groupId>com.skplanet.plandas</groupId>
 			<artifactId>geodis</artifactId>
-			<version>0.11.0-HD-SNAPSHOT</version>
+			<version>0.12.0-11st-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>com.skplanet.spring.data.plandas</groupId>
@@ -223,7 +239,7 @@
 			<groupId>com.jayway.jsonpath</groupId>
 			<artifactId>json-path</artifactId>
 			<version>0.8.1</version>
-		<!-- 	<scope>test</scope> -->
+			<!-- <scope>test</scope> -->
 		</dependency>
 		<dependency>
 			<groupId>org.hamcrest</groupId>

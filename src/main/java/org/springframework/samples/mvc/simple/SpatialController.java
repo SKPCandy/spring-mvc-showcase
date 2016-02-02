@@ -19,7 +19,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import redis.clients.jedis.Jedis;
+import com.jayway.jsonpath.JsonPath;
+import com.skplanet.mosaic.Pipeline;
+import com.skplanet.mosaic.Plamosaic;
+import com.skplanet.mosaic.PlamosaicPool;
+
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Protocol.ORDERBY;
 import redis.clients.jedis.Protocol.UNITS;
@@ -29,20 +33,24 @@ import redis.clients.spatial.model.LineStringBuffer;
 import redis.clients.spatial.model.Point;
 import redis.clients.spatial.model.Polygon;
 
-import com.jayway.jsonpath.JsonPath;
-import com.skplanet.mosaic.Plamosaic;
-import com.skplanet.mosaic.PlamosaicPool;
-
 @Controller
 public class SpatialController {
 
 	PlamosaicPool geodisPool = new PlamosaicPool("172.19.114.208:9102", "svc07_01", "svc07_01");
 
-	JedisPool jhdPool = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.205", 19000, 10000);
+	PlamosaicPool jhdPool = new PlamosaicPool("172.19.114.205", 19000, "a1234");
+
+	JedisPool jhdPool1 = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.205", 19001, 10000, "1234", 11);
+	JedisPool jhdPool2 = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.205", 19002, 10000, "1234", 11);
+	JedisPool jhdPool3 = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.205", 19003, 10000, "1234", 11);
+
+	JedisPool jhdPool4 = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.205", 19004, 10000);
 
 	final String key = "autocomplete";
 
 	String stringUrlPrefix = "http://175.126.56.112:15003/mosaic_request_handler?url=";
+
+	private List<Object> rs;
 
 	@PreDestroy
 	public void release() {
@@ -51,7 +59,7 @@ public class SpatialController {
 		} finally {
 		}
 		try {
-			jhdPool.destroy();
+			jhdPool.release();
 		} finally {
 		}
 	}
@@ -171,7 +179,7 @@ public class SpatialController {
 	@RequestMapping(value = "/nnearest", produces = "application/json; charset=utf8")
 	public @ResponseBody String gnn(@RequestParam(value = "lat") double lat, @RequestParam(value = "lon") double lon,
 			@RequestParam(value = "count") long count, @RequestParam(value = "match", required = false) String match)
-			throws UnsupportedEncodingException {
+					throws UnsupportedEncodingException {
 		Plamosaic jedis = geodisPool.getClient();
 
 		if (match == null) {
@@ -204,66 +212,40 @@ public class SpatialController {
 		return result;
 	}
 
-	@RequestMapping(value = "/queryImgSample", produces = "application/json; charset=utf8")
-	public @ResponseBody String queryImgSample(@RequestParam(value = "count", defaultValue = "10") int count) {
+	@SuppressWarnings("unchecked")
+	@RequestMapping(value = "/queryhd", produces = "application/json; charset=utf8")
+	public @ResponseBody String queryImg(@RequestParam(value = "itemkey") String itemkey, @RequestParam(value = "count") int count) {
+		Plamosaic jedis = jhdPool.getClient();
 
-		String[] _features = { "13291668172922939131", "13240301326391574397", "13433626072218198014", "12627520918390701567",
-				"18427601007981604847", "16689160991402884987", "17581906984813199339", "18158441129789325310", "13798367708723083249",
-				"17482894996636695422", "18297944691150157805", "15564294896170811383", "13618876338904361727", "1935983781169065919",
-				"15811646573752213420", "16069910366060145111", "12789650950872622843", "13814509793503607677", "16045762241047289855",
-				"12681573047467900911", "18427581215709048813", "17842118230475276283", "18446741324930482175", "13690379912823664638",
-				"9223352640694253489", "17870212952661688255", "18297874046508859341", "13762978469919588223", "17724960868975756287",
-				"2017611496899866623", "5434337105023565740", "18241490838593301975", "13078453214793170683", "13763000358165020347",
-				"13546783282053470206", "18409580578197077999", "15852334237651550075", "16716798316013158396", "18154005423894560763",
-				"15960607528579497723", "8628780728651087739", "17838672361956048315", "13761698364531867389", "18284579198381047807",
-				"13635688004969055157", "12867857213505531898", "5939544897224118253", "16076542729594925040", "17978369712460922494",
-				"13835055787539430971", "18445573914163885567", "17257784973801127935", "15852650873378307967", "16717326082669280767",
-				"9223332179523534841", "9079248048329572347", "7493950472269332287", "17843259515947433919", "18445540933001740029",
-				"13816999573224095743", "18269329071579866023", "8257824869139476459", "6111187457476505567", "16101031597960523761",
-				"2988127286773939967", "13753992093740302067", "13831671134266834367", "17238503932695508479", "16717077573447706491",
-				"7484277238609215487", "17582039715546005499", "7890046147527917470", "12677499336220456510", "17856770172979969341",
-				"13614240638382857807", "13780429741119373055", "13623377877086857365", "3663062261107353855", "6587012232755097533",
-				"9152249669790616563", "13003440167593963259", "13834772627857342333", "15720328652010813439", "17293250269785473007",
-				"18427561425562873711", "7474796566457352063", "17581905060936286207", "13546816683425890302", "13834959485223368625",
-				"17581945605431492478", "18297980150379085773", "16063600963330490107", "18301491990560236277", "5402066095164485599",
-				"14657532393235496877", "16071071448183336407", "13330082910380748539", "13832524741835751289", "18027900230950707135",
-				"17148862952447541231", "18427530604074479597", "17807180011015241727", "18446602511587475455", "18446735273321529278",
-				"18446743386426570641", "17870212746503257983", "18302483749025087439", "13763000425810739071", "18302626686037912575",
-				"6902891220742172671", "5425326727493025199", "15935118965494640087", "13077327314895765119", "13330654828297187257",
-				"18445573912017197054", "18436602176296841215", "15850081284639407999", "16716798865768972285", "17577544929863663579",
-				"17978220157346496507", "8070334087094337403", "17554949974885137919", "13754973751407738605", "18428694420832387067",
-				"17670913271109804981", "8256171203668078330", "5939566887725109229", "16022218058011836400", "17690139299800809342",
-				"13762999293012082363", "13835012693982429183", "18410706478408130543", "15843607390205751163", "16717326081594932735",
-				"17870243463031554011", "9043074120067563513", "7493952527545401214", "16699345219244261375", "18338587038929846013",
-				"9205322350885257211", "18234426174358708903", "5952017026581130747", "6111205183812120543", "16092024256701067249",
-				"2990370155195661438", "12456955366714506995", "18137077191513446335", "17256659073525176062", "17292411325258655611",
-				"8069746289679007231", "18446730774740582395", "12213677677302202333", "12677525690139718718", "17577546415222750511",
-				"18374686203476697037", "17847184467390496375", "13623377877104683141", "8274764222453344511", "6586748374962220991",
-				"9156894041265560563" };
+		List<String> features = jedis.lrange(itemkey + "_signatures", 0, -1);
 
-		Jedis jedis = jhdPool.getResource();
-		List<Img> result = new ArrayList<Img>();
-		try {
-			result = jedis.queryImg("img_list", count, _features);
-		} catch (Exception ex) {
-			jhdPool.returnBrokenResource(jedis);
-			ex.printStackTrace();
-		} finally {
-			if (jhdPool != null) {
-				jhdPool.returnResource(jedis);
-			}
+		String img_url = itemkey + "_temp";
+
+		Pipeline pl = jedis.pipelined();
+		for (String fe : features) {
+			pl.rpush(img_url, fe);
 		}
+		if (features != null) {
+			pl.queryImgHD("S01_img", count, img_url);
+		}
+		pl.del(img_url);
 
+		rs = pl.syncAndReturnAll();
+
+		if (rs.size() == 0) {
+			return "nothing";
+		}
+		List<Img> rss = (List<Img>) rs.get(rs.size() - 2);
 		StringBuffer sb = new StringBuffer("{ \"list\" : [");
 
-		int idx = 0;
-		for (Img img : result) {
+		for (int idx = 0; idx < rss.size(); idx++) {
+			Img img = (Img) rss.get(idx);
 			if (idx++ != 0) {
 				sb.append(",");
 			}
 			try {
 				String _url = img.getUrl();
-				long value = img.getValue();
+				double value = img.getValue();
 				sb.append("{\"url\":\"" + _url + "\",  \"value\": " + value + "}");
 			} catch (Exception ex) {
 				ex.printStackTrace();
@@ -274,35 +256,40 @@ public class SpatialController {
 		return sb.toString();
 	}
 
-	@RequestMapping(value = "/queryImg", produces = "application/json; charset=utf8")
-	public @ResponseBody String queryImg(@RequestParam(value = "count") int count, @RequestParam(value = "features") String[] features) {
+	@SuppressWarnings("unchecked")
+	@RequestMapping(value = "/queryud", produces = "application/json; charset=utf8")
+	public @ResponseBody String queryImgUD(@RequestParam(value = "itemkey") String itemkey, @RequestParam(value = "count") int count) {
+		Plamosaic jedis = jhdPool.getClient();
 
-		Jedis jedis = jhdPool.getResource();
-		List<Img> result = new ArrayList<Img>();
-		long s = System.currentTimeMillis();
-		long e = 0;
-		try {
-			result = jedis.queryImg("img_list", 10, features);
-			e = System.currentTimeMillis();
-		} catch (Exception ex) {
-			jhdPool.returnBrokenResource(jedis);
-			ex.printStackTrace();
-		} finally {
-			if (jhdPool != null) {
-				jhdPool.returnResource(jedis);
-			}
+		List<String> features = jedis.milrange(itemkey + "_features", 0, -1);
+
+		String img_url = itemkey + "_temp";
+
+		Pipeline pl = jedis.pipelined();
+		for (String fe : features) {
+			pl.mirpush(img_url.getBytes(), fe.getBytes());
 		}
+		if (features != null) {
+			pl.queryImgUD("S01_img", count, img_url);
+		}
+		pl.del(img_url);
 
-		StringBuffer sb = new StringBuffer("{ \"time\" : " + (e - s) + ", \"list\" : [");
+		rs = pl.syncAndReturnAll();
 
-		int idx = 0;
-		for (Img img : result) {
+		if (rs.size() == 0) {
+			return "nothing";
+		}
+		List<Img> rss = (List<Img>) rs.get(rs.size() - 2);
+		StringBuffer sb = new StringBuffer("{ \"list\" : [");
+
+		for (int idx = 0; idx < rss.size(); idx++) {
+			Img img = (Img) rss.get(idx);
 			if (idx++ != 0) {
 				sb.append(",");
 			}
 			try {
 				String _url = img.getUrl();
-				long value = img.getValue();
+				double value = img.getValue();
 				sb.append("{\"url\":\"" + _url + "\",  \"value\": " + value + "}");
 			} catch (Exception ex) {
 				ex.printStackTrace();
@@ -313,41 +300,40 @@ public class SpatialController {
 		return sb.toString();
 	}
 
-	@RequestMapping(value = "/queryImg2", produces = "application/json; charset=utf8")
-	public @ResponseBody String queryImg(@RequestParam(value = "img_url") String img_url, @RequestParam(value = "count") int count) {
-		String[] fs = null;
-		try {
-			fs = this.httpRequest(img_url);
-		} catch (IOException e) {
-			e.printStackTrace();
+	@SuppressWarnings("unchecked")
+	@RequestMapping(value = "/querycos", produces = "application/json; charset=utf8")
+	public @ResponseBody String queryImgCOS(@RequestParam(value = "itemkey") String itemkey, @RequestParam(value = "count") int count) {
+		Plamosaic jedis = jhdPool.getClient();
+
+		List<String> features = jedis.milrange(itemkey + "_features", 0, -1);
+
+		String img_url = itemkey + "_temp";
+
+		Pipeline pl = jedis.pipelined();
+		for (String fe : features) {
+			pl.mirpush(img_url.getBytes(), fe.getBytes());
 		}
-
-		Jedis jedis = jhdPool.getResource();
-		List<Img> result = new ArrayList<Img>();
-		try {
-			if (fs != null) {
-				result = jedis.queryImg("lh_list", count, fs);
-			}
-
-		} catch (Exception ex) {
-			jhdPool.returnBrokenResource(jedis);
-			ex.printStackTrace();
-		} finally {
-			if (jhdPool != null) {
-				jhdPool.returnResource(jedis);
-			}
+		if (features != null) {
+			pl.queryImgCSIMU("S01_img", count, img_url);
 		}
+		pl.del(img_url);
 
+		rs = pl.syncAndReturnAll();
+
+		if (rs.size() == 0) {
+			return "nothing";
+		}
+		List<Img> rss = (List<Img>) rs.get(rs.size() - 2);
 		StringBuffer sb = new StringBuffer("{ \"list\" : [");
 
-		int idx = 0;
-		for (Img img : result) {
+		for (int idx = 0; idx < rss.size(); idx++) {
+			Img img = (Img) rss.get(idx);
 			if (idx++ != 0) {
 				sb.append(",");
 			}
 			try {
 				String _url = img.getUrl();
-				long value = img.getValue();
+				double value = img.getValue();
 				sb.append("{\"url\":\"" + _url + "\",  \"value\": " + value + "}");
 			} catch (Exception ex) {
 				ex.printStackTrace();
@@ -406,4 +392,24 @@ public class SpatialController {
 	@RequestMapping("/index")
 	public void getmap() {
 	}
+
+	@RequestMapping(value = "/loadImg", produces = "application/json; charset=utf8")
+	public @ResponseBody String loadImgJson(@RequestParam(value = "prefix") String prefix,
+			@RequestParam(value = "img_list") String img_list, @RequestParam(value = "count") long count,
+			@RequestParam(value = "limit", required = false) long limit) {
+		JedisPool jp = null;
+		if ("S01".equals(prefix)) {
+			jp = jhdPool1;
+		} else if ("S02".equals(prefix)) {
+			jp = jhdPool2;
+		} else if ("S03".equals(prefix)) {
+			jp = jhdPool3;
+		} else if ("S04".equals(prefix)) {
+			jp = jhdPool4;
+		}
+		IMGGenerator img = new IMGGenerator(jp, prefix, img_list, count, limit);
+		img.execute();
+		return "OK";
+	}
+
 }
