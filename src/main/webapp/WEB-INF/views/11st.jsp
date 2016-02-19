@@ -14,11 +14,14 @@
     <div class="carousel_container">
         <a class="carousel_direction carousel_direction--prev">&lt;</a>
         <div class="carousels">
-            <a href="#" data-item="S01S01_img1550" class="carousel"><img src="http://i.011st.com/al/2/1/6/0/1/6/1334216016_B_V3.jpg" class="carousel__image"></a>
-            <a href="#" data-item="S01S01_img7030" class="carousel"><img src="http://i.011st.com/al/4/2/4/5/9/3/1365424593_B.jpg" class="carousel__image"></a>
-            <a href="#" data-item="S01S01_img1944" class="carousel"><img src="http://i.011st.com/al/9/2/5/9/2/6/1293925926_B_V14.jpg" class="carousel__image"></a>
-            <a href="#" data-item="S01S01_img7240" class="carousel"><img src="http://i.011st.com/ab/2/7/9/9/7/8/1017279978_B.jpg" class="carousel__image"></a>
-            <a href="#" data-item="S01S01_img1089" class="carousel"><img src="http://i.011st.com/ak/4/1/5/7/2/6/1136415726_B_V2.jpg" class="carousel__image"></a>
+            <a href="#" data-item="IMG1550" class="carousel"><img src="http://i.011st.com/al/2/1/6/0/1/6/1334216016_B_V3.jpg" class="carousel__image"></a>
+            <a href="#" data-item="IMG7030" class="carousel"><img src="http://i.011st.com/al/4/2/4/5/9/3/1365424593_B.jpg" class="carousel__image"></a>
+            <a href="#" data-item="IMG1944" class="carousel"><img src="http://i.011st.com/al/9/2/5/9/2/6/1293925926_B_V14.jpg" class="carousel__image"></a>
+            <a href="#" data-item="IMG7240" class="carousel"><img src="http://i.011st.com/ab/2/7/9/9/7/8/1017279978_B.jpg" class="carousel__image"></a>
+            <a href="#" data-item="IMG1089" class="carousel"><img src="http://i.011st.com/ak/4/1/5/7/2/6/1136415726_B_V2.jpg" class="carousel__image"></a>
+            <a href="#" data-item="IMG302" class="carousel"><img src="http://i.011st.com/ak/3/3/6/1/4/5/1290336145_B_V6.jpg" class="carousel__image"></a>
+            <a href="#" data-item="IMG317" class="carousel"><img src="http://i.011st.com/al/7/9/6/4/9/0/1355796490_B_V18.jpg" class="carousel__image"></a>
+        
         </div>
         <a class="carousel_direction carousel_direction--next carousel_direction--has">&gt;</a>
     </div>

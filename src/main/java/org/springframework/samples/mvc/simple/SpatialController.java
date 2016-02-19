@@ -38,17 +38,7 @@ public class SpatialController {
 
 	PlamosaicPool geodisPool = new PlamosaicPool("172.19.114.208:9102", "svc07_01", "svc07_01");
 
-	PlamosaicPool jhdPool = new PlamosaicPool("172.19.114.205", 19000, "a1234");
-
-	JedisPool jhdPool1 = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.205", 19001, 10000, "1234", 11);
-	JedisPool jhdPool2 = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.205", 19002, 10000, "1234", 11);
-	JedisPool jhdPool3 = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.205", 19003, 10000, "1234", 11);
-
-	JedisPool jhdPool4 = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.205", 19004, 10000);
-
 	final String key = "autocomplete";
-
-	String stringUrlPrefix = "http://175.126.56.112:15003/mosaic_request_handler?url=";
 
 	private List<Object> rs;
 
@@ -56,10 +46,6 @@ public class SpatialController {
 	public void release() {
 		try {
 			geodisPool.release();
-		} finally {
-		}
-		try {
-			jhdPool.release();
 		} finally {
 		}
 	}
@@ -212,167 +198,6 @@ public class SpatialController {
 		return result;
 	}
 
-	@SuppressWarnings("unchecked")
-	@RequestMapping(value = "/queryhd", produces = "application/json; charset=utf8")
-	public @ResponseBody String queryImg(@RequestParam(value = "itemkey") String itemkey, @RequestParam(value = "count") int count) {
-		Plamosaic jedis = jhdPool.getClient();
-
-		List<String> features = jedis.lrange(itemkey + "_signatures", 0, -1);
-
-		String img_url = itemkey + "_temp";
-
-		Pipeline pl = jedis.pipelined();
-		for (String fe : features) {
-			pl.rpush(img_url, fe);
-		}
-		if (features != null) {
-			pl.queryImgHD("S01_img", count, img_url);
-		}
-		pl.del(img_url);
-
-		rs = pl.syncAndReturnAll();
-
-		if (rs.size() == 0) {
-			return "nothing";
-		}
-		List<Img> rss = (List<Img>) rs.get(rs.size() - 2);
-		StringBuffer sb = new StringBuffer("{ \"list\" : [");
-
-		for (int idx = 0; idx < rss.size(); idx++) {
-			Img img = (Img) rss.get(idx);
-			if (idx++ != 0) {
-				sb.append(",");
-			}
-			try {
-				String _url = img.getUrl();
-				double value = img.getValue();
-				sb.append("{\"url\":\"" + _url + "\",  \"value\": " + value + "}");
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
-		}
-		sb.append("]}");
-
-		return sb.toString();
-	}
-
-	@SuppressWarnings("unchecked")
-	@RequestMapping(value = "/queryud", produces = "application/json; charset=utf8")
-	public @ResponseBody String queryImgUD(@RequestParam(value = "itemkey") String itemkey, @RequestParam(value = "count") int count) {
-		Plamosaic jedis = jhdPool.getClient();
-
-		List<String> features = jedis.milrange(itemkey + "_features", 0, -1);
-
-		String img_url = itemkey + "_temp";
-
-		Pipeline pl = jedis.pipelined();
-		for (String fe : features) {
-			pl.mirpush(img_url.getBytes(), fe.getBytes());
-		}
-		if (features != null) {
-			pl.queryImgUD("S01_img", count, img_url);
-		}
-		pl.del(img_url);
-
-		rs = pl.syncAndReturnAll();
-
-		if (rs.size() == 0) {
-			return "nothing";
-		}
-		List<Img> rss = (List<Img>) rs.get(rs.size() - 2);
-		StringBuffer sb = new StringBuffer("{ \"list\" : [");
-
-		for (int idx = 0; idx < rss.size(); idx++) {
-			Img img = (Img) rss.get(idx);
-			if (idx++ != 0) {
-				sb.append(",");
-			}
-			try {
-				String _url = img.getUrl();
-				double value = img.getValue();
-				sb.append("{\"url\":\"" + _url + "\",  \"value\": " + value + "}");
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
-		}
-		sb.append("]}");
-
-		return sb.toString();
-	}
-
-	@SuppressWarnings("unchecked")
-	@RequestMapping(value = "/querycos", produces = "application/json; charset=utf8")
-	public @ResponseBody String queryImgCOS(@RequestParam(value = "itemkey") String itemkey, @RequestParam(value = "count") int count) {
-		Plamosaic jedis = jhdPool.getClient();
-
-		List<String> features = jedis.milrange(itemkey + "_features", 0, -1);
-
-		String img_url = itemkey + "_temp";
-
-		Pipeline pl = jedis.pipelined();
-		for (String fe : features) {
-			pl.mirpush(img_url.getBytes(), fe.getBytes());
-		}
-		if (features != null) {
-			pl.queryImgCSIMU("S01_img", count, img_url);
-		}
-		pl.del(img_url);
-
-		rs = pl.syncAndReturnAll();
-
-		if (rs.size() == 0) {
-			return "nothing";
-		}
-		List<Img> rss = (List<Img>) rs.get(rs.size() - 2);
-		StringBuffer sb = new StringBuffer("{ \"list\" : [");
-
-		for (int idx = 0; idx < rss.size(); idx++) {
-			Img img = (Img) rss.get(idx);
-			if (idx++ != 0) {
-				sb.append(",");
-			}
-			try {
-				String _url = img.getUrl();
-				double value = img.getValue();
-				sb.append("{\"url\":\"" + _url + "\",  \"value\": " + value + "}");
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
-		}
-		sb.append("]}");
-
-		return sb.toString();
-	}
-
-	public String[] httpRequest(String strUrl) throws IOException {
-
-		URL url = new URL(stringUrlPrefix + strUrl);
-		URLConnection uc = url.openConnection();
-
-		InputStreamReader inputStreamReader = null;
-		BufferedReader in = null;
-		try {
-			inputStreamReader = new InputStreamReader(uc.getInputStream(), "UTF8");
-			in = new BufferedReader(inputStreamReader);
-			StringBuilder builder = new StringBuilder();
-			int ch;
-			while ((ch = in.read()) != -1) {
-				builder.append((char) ch);
-			}
-			return parsenSave(builder.toString());
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		} finally {
-			if (in != null)
-				in.close();
-			if (inputStreamReader != null)
-				inputStreamReader.close();
-		}
-
-		return null;
-
-	}
-
 	public String[] parsenSave(final String jsonStr) {
 		String sub = jsonStr.substring(jsonStr.indexOf("\"signature\": ["));
 		String sub2 = StringUtils.replace(sub, ", ", "\",\"");
@@ -392,28 +217,9 @@ public class SpatialController {
 	@RequestMapping("/index")
 	public void getmap() {
 	}
-	
+
 	@RequestMapping("/11st")
 	public void getmap2() {
-	}
-
-	@RequestMapping(value = "/loadImg", produces = "application/json; charset=utf8")
-	public @ResponseBody String loadImgJson(@RequestParam(value = "prefix") String prefix,
-			@RequestParam(value = "img_list") String img_list, @RequestParam(value = "count") long count,
-			@RequestParam(value = "limit", required = false) long limit) {
-		JedisPool jp = null;
-		if ("S01".equals(prefix)) {
-			jp = jhdPool1;
-		} else if ("S02".equals(prefix)) {
-			jp = jhdPool2;
-		} else if ("S03".equals(prefix)) {
-			jp = jhdPool3;
-		} else if ("S04".equals(prefix)) {
-			jp = jhdPool4;
-		}
-		IMGGenerator img = new IMGGenerator(jp, prefix, img_list, count, limit);
-		img.execute();
-		return "OK";
 	}
 
 }
