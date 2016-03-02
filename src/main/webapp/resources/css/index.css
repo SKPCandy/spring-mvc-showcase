@@ -53,18 +53,24 @@ table {
 }
 
 .container {
-	margin: 32px auto 0;
-	width: 924px;
+	margin: 32px 12px 0;
 }
 
 .title {
+	margin: 0 auto;
+	width: 924px;
 	font-size: 20px;
 	font-weight: bold;
 	font-style: italic;
 }
 
-.carousel_container {
+.carousel_handlebar {
 	margin-top: 22px;
+	text-align: right;
+}
+
+.carousel_container {
+	margin-top: 5px;
 	padding: 12px;
 	position: relative;
 	height: 150px;
@@ -113,7 +119,8 @@ table {
 }
 
 .watcha_container {
-	margin-top: 17px;
+	margin: 17px auto 0;
+	width: 924px;
 }
 
 .watcha_control {

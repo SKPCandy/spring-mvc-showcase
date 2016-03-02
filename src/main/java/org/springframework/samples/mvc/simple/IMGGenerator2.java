@@ -5,88 +5,37 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
 
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
-import com.skplanet.mosaic.Pipeline;
-import com.skplanet.mosaic.Plamosaic;
-import com.skplanet.mosaic.PlamosaicPool;
-
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.Pipeline;
 
-public class IMGGenerator {
+public class IMGGenerator2 {
 
-	PlamosaicPool pPool;
-	Plamosaic jedis;
+	JedisPool pPool;
+	Jedis jedis;
 	String dir;
 	String img_list_name;
 	long maxsize;
 	int index = 0;
 
 	public static void main(String args[]) {
-		PlamosaicPool jhdPool = new PlamosaicPool("172.19.114.205", 19000, "a1234");
+		JedisPool jhdPool = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.205", 19000, 2000000, "a1234");
 
-		IMGGenerator ig = new IMGGenerator(jhdPool, "IMG", 1000);
-		// ig.execute();
-		ig.checkOfFeatures();
+		IMGGenerator2 ig = new IMGGenerator2(jhdPool, "IMG", 200000);
+		ig.execute();
 
-		jhdPool.release();
+		jhdPool.destroy();
 	}
 
-	private void checkOfFeatures() {
-		String[] ips = { "172.19.114.203", "172.19.114.203", "172.19.114.203", "172.19.114.204", "172.19.114.204", "172.19.114.204",
-				"172.19.114.205", "172.19.114.205", "172.19.114.205", "172.19.114.206", "172.19.114.206", "172.19.114.206",
-				"172.19.114.207", "172.19.114.207", "172.19.114.207", "172.19.114.208", "172.19.114.208", "172.19.114.208" };
-		int[] ports = { 19001, 19002, 19003, 19001, 19002, 19003, 19001, 19002, 19003, 19001, 19002, 19003, 19001, 19002, 19003, 19001,
-				19002, 19003 };
-		int featureSize = 9216;
-		for (int i = 0; i < 18; i++) {
-			JedisPool jp = new JedisPool(new GenericObjectPoolConfig(), ips[i], ports[i], 20000, "1234", 11);
-			Jedis jedis = jp.getResource();
-			try {
-				Set<String> keys = jedis.keys(i + ":IMG*");
-				Iterator<String> kk = keys.iterator();
-
-				while (kk.hasNext()) {
-
-					List<String> dups = new ArrayList<String>();
-					String kkl = kk.next();
-					String category = kkl.substring(kkl.lastIndexOf(":") + 1); // category
-					List<String> klist = jedis.lrange(kkl, 0, -1);
-					for (String sk : klist) {
-						long size = jedis.llenDouble(sk + "_features");
-						if (featureSize != size) {
-							dups.add(sk);
-							System.out.println(sk);
-							jedis.lrem(i + ":IMG:" + category, 1, sk);
-							jedis.del(sk + "_features", sk + "_signatures", sk);
-						}
-					}
-
-				}
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			} finally {
-				jp.returnResource(jedis);
-			}
-
-			jp.destroy();
-		}
-
-	}
-
-	public IMGGenerator(PlamosaicPool pPool, String img_list_name, long maxsize) {
+	public IMGGenerator2(JedisPool pPool, String img_list_name, long maxsize) {
 		this.pPool = pPool;
-		this.dir = "/Users/horanghi/dlimg";
+		this.dir = "/Users/horanghi/dlimg/0";
 		this.img_list_name = img_list_name;
 		this.maxsize = maxsize;
 
-		jedis = this.pPool.getClient();
 	}
 
 	public void execute() {
@@ -139,12 +88,14 @@ public class IMGGenerator {
 	}
 
 	public boolean parsenSave(String linesStr) {
+		jedis = this.pPool.getResource();
 		Pipeline pl = jedis.pipelined();
+
 		String[] lines = linesStr.split("\n");
 
 		for (String line : lines) {
 
-			int preint = (index % 3);
+			int preint = (index % 18);
 			/*
 			 * 
 			 * <contentid>\t<categoryid>\t<category name>\t<detected name>\t<local filename>\t<color feature>\t<hamming deep feature>\t<float deep feature>\t<duplicate signature>\t<extra flag>\n
@@ -171,7 +122,7 @@ public class IMGGenerator {
 			String features = cons[7];
 			// String duplicate = cons[8];
 
-			String IMG_LIST = preint + ":" + img_list_name + index + ":" + category;
+			String IMG_LIST = preint + ":" + img_list_name + ":" + category;
 			String ID = preint + ":" + contentid;
 			String Features = ID + "_features";
 			String HD = ID + "_signatures";
@@ -185,21 +136,23 @@ public class IMGGenerator {
 			pl.rpush(IMG_LIST, ID);
 			pl.set(ID, url);
 			String[] fs = features.split(",");
+			double[] ds = new double[fs.length];
 			for (int i = 0; i < fs.length; i++) {
-				pl.rpushDouble(Features, Float.valueOf(fs[i]));
+				ds[i] = Double.valueOf(fs[i]);
 			}
+			pl.rpushDouble(Features, ds);
 
-			for (String signature : hds.split(",")) {
-				pl.rpush(HD, signature);
-			}
+			pl.rpush(HD, hds.split(","));
 
-			if (index % 100 == 0) {
+			if (index % 20000 == 0) {
 				pl.sync();
 				pl = jedis.pipelined();
 			}
 
 		}
 		pl.sync();
+
+		this.pPool.returnResource(jedis);
 
 		return false;
 	}

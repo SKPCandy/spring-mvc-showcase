@@ -8,260 +8,271 @@ import java.util.List;
 
 import javax.annotation.PreDestroy;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.jayway.jsonpath.JsonPath;
-import com.skplanet.mosaic.Pipeline;
-import com.skplanet.mosaic.Plamosaic;
-import com.skplanet.mosaic.PlamosaicPool;
 
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Response;
 import redis.clients.spatial.model.Img;
 
 @Controller
 public class DLController {
 
-	PlamosaicPool jhdPool = new PlamosaicPool("172.19.114.205", 19000, "a1234");
+	JedisPool jhdPool = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.205", 19000, 20000, "a1234");
 
 	// String stringUrlPrefix = "http://175.126.56.112:15003/mosaic_request_handler?url=";
 
 	@PreDestroy
 	public void release() {
 		try {
-			jhdPool.release();
+			jhdPool.destroy();
 		} finally {
 		}
 	}
 
 	@RequestMapping(value = "/queryhd", produces = "application/json; charset=utf8")
-	public @ResponseBody String queryImg(@RequestParam(value = "itemkey") String itemkey, @RequestParam(value = "count") int count) {
-		Plamosaic jedis = jhdPool.getClient();
-		List<String> features;
-		features = jedis.lrange("0:" + itemkey + "_signatures", 0, -1);
-		if (features.isEmpty()) {
-			features = jedis.lrange("1:" + itemkey + "_signatures", 0, -1);
-			if (features.isEmpty()) {
-				features = jedis.lrange("2:" + itemkey + "_signatures", 0, -1);
+	public @ResponseBody String queryImgHD(@RequestParam(value = "itemkey") String itemkey,
+			@RequestParam(value = "category") String category, @RequestParam(value = "count") int count) {
+		Jedis jedis = jhdPool.getResource();
+		StringBuffer sb = new StringBuffer("{ \"list\" : [");
+		try {
+			List<String> signatures;
+			signatures = jedis.lrange(itemkey + "_signatures", 0, -1);
+
+			if (signatures.isEmpty())
+				return "nothing";
+
+			String queryKey = itemkey + "_temp";
+
+			Pipeline pl = jedis.pipelined();
+			for (int i = 0; i < 18; i++) {
+				pl.rpush(i + ":" + queryKey, signatures.toArray(new String[0]));
 			}
-		}
-		if (features.isEmpty())
-			return "nothing";
+			pl.sync();
 
-		String img_url = itemkey + "_temp";
+			pl = jedis.pipelined();
+			List<Response<List<Img>>> rssList = new ArrayList<Response<List<Img>>>();
+			for (int i = 0; i < 18; i++) {
+				rssList.add(pl.hdist(i + ":IMG:" + category, count, i + ":" + queryKey));
+			}
 
-		Pipeline pl = jedis.pipelined();
-		for (String fe : features) {
-			pl.rpush("0:" + img_url, fe);
-			pl.rpush("1:" + img_url, fe);
-			pl.rpush("2:" + img_url, fe);
-		}
-		Response<List<Img>> rs0 = pl.hdist("0:IMG", count, "0:" + img_url);
-		Response<List<Img>> rs1 = pl.hdist("1:IMG", count, "1:" + img_url);
-		Response<List<Img>> rs2 = pl.hdist("2:IMG", count, "2:" + img_url);
+			for (int i = 0; i < 18; i++) {
+				pl.del(i + ":" + queryKey);
+			}
 
-		pl.del("0:" + img_url);
-		pl.del("1:" + img_url);
-		pl.del("2:" + img_url);
+			pl.sync();
 
-		pl.sync();
+			List<Img> rss = new ArrayList<Img>();
+			for (int i = 0; i < 18; i++) {
+				rss.addAll(rssList.get(i).get());
+			}
 
-		List<Img> rss = new ArrayList<Img>();
-		rss.addAll(rs0.get());
-		rss.addAll(rs1.get());
-		rss.addAll(rs2.get());
+			if (rss.size() == 0) {
+				return "nothing";
+			}
 
-		if (rss.size() == 0) {
-			return "nothing";
-		}
+			Collections.sort(rss, new Comparator<Img>() {
+				@Override
+				public int compare(Img o1, Img o2) {
+					if (o1.getValue() < o2.getValue()) {
+						return -1;
+					} else if (o1.getValue() > o2.getValue()) {
+						return 1;
+					} else {
+						return 0;
+					}
+				}
+			});
 
-		Collections.sort(rss, new Comparator<Img>() {
-			@Override
-			public int compare(Img o1, Img o2) {
-				if (o1.getValue() < o2.getValue()) {
-					return 1;
-				} else if (o1.getValue() > o2.getValue()) {
-					return -1;
-				} else {
-					return 0;
+			int size = (rss.size() > count) ? count : rss.size();
+
+			for (int idx = 0; idx < size;) {
+				Img img = (Img) rss.get(idx);
+				if (idx++ != 0) {
+					sb.append(",");
+				}
+				try {
+					String _url = img.getUrl();
+					double value = img.getValue();
+					sb.append("{\"url\":\"" + _url + "\", \"value\": " + value + "}");
+				} catch (Exception ex) {
+					ex.printStackTrace();
 				}
 			}
-		});
+			sb.append("]}");
 
-		StringBuffer sb = new StringBuffer("{ \"list\" : [");
-
-		int size = (rss.size() > count) ? count : rss.size();
-
-		for (int idx = 0; idx < size;) {
-			Img img = (Img) rss.get(idx);
-			if (idx++ != 0) {
-				sb.append(",");
-			}
-			try {
-				String _url = img.getUrl();
-				double value = img.getValue();
-				sb.append("{\"url\":\"" + _url + "\", \"value\": " + value + "}");
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		} finally {
+			jhdPool.returnResource(jedis);
 		}
-		sb.append("]}");
 
 		return sb.toString();
 	}
 
 	@RequestMapping(value = "/queryud", produces = "application/json; charset=utf8")
-	public @ResponseBody String queryImgUD(@RequestParam(value = "itemkey") String itemkey, @RequestParam(value = "count") int count) {
-		Plamosaic jedis = jhdPool.getClient();
-		List<Double> features;
-		features = jedis.lrangeDouble("0:" + itemkey + "_features", 0, -1);
-		if (features.isEmpty()) {
-			features = jedis.lrangeDouble("1:" + itemkey + "_features", 0, -1);
-			if (features.isEmpty()) {
-				features = jedis.lrangeDouble("2:" + itemkey + "_features", 0, -1);
+	public @ResponseBody String queryImgUD(@RequestParam(value = "itemkey") String itemkey,
+			@RequestParam(value = "category") String category, @RequestParam(value = "count") int count) {
+		Jedis jedis = jhdPool.getResource();
+		StringBuffer sb = new StringBuffer("{ \"list\" : [");
+		try {
+			List<Double> features;
+			features = jedis.lrangeDouble(itemkey + "_features", 0, -1);
+
+			if (features.isEmpty())
+				return "nothing";
+
+			String queryKey = itemkey + "_temp";
+
+			Pipeline pl = jedis.pipelined();
+			for (int i = 0; i < 18; i++) {
+				pl.rpushDouble(i + ":" + queryKey, ArrayUtils.toPrimitive(features.toArray(new Double[0])));
 			}
-		}
-		if (features.isEmpty())
-			return "nothing";
+			pl.sync();
 
-		String img_url = itemkey + "_temp";
+			pl = jedis.pipelined();
+			List<Response<List<Img>>> rssList = new ArrayList<Response<List<Img>>>();
+			for (int i = 0; i < 18; i++) {
+				rssList.add(pl.udist(i + ":IMG:" + category, count, i + ":" + queryKey));
+			}
 
-		Pipeline pl = jedis.pipelined();
-		for (double fe : features) {
-			pl.rpushDouble("0:" + img_url, fe);
-			pl.rpushDouble("1:" + img_url, fe);
-			pl.rpushDouble("2:" + img_url, fe);
-		}
-		Response<List<Img>> rs0 = pl.udist("0:IMG", count, "0:" + img_url);
-		Response<List<Img>> rs1 = pl.udist("1:IMG", count, "1:" + img_url);
-		Response<List<Img>> rs2 = pl.udist("2:IMG", count, "2:" + img_url);
+			for (int i = 0; i < 18; i++) {
+				pl.del(i + ":" + queryKey);
+			}
 
-		pl.del("0:" + img_url);
-		pl.del("1:" + img_url);
-		pl.del("2:" + img_url);
+			pl.sync();
 
-		pl.sync();
+			List<Img> rss = new ArrayList<Img>();
+			for (Response<List<Img>> rs : rssList) {
+				rss.addAll(rs.get());
+			}
 
-		List<Img> rss = new ArrayList<Img>();
-		rss.addAll(rs0.get());
-		rss.addAll(rs1.get());
-		rss.addAll(rs2.get());
+			if (rss.size() == 0) {
+				return "nothing";
+			}
 
-		if (rss.size() == 0) {
-			return "nothing";
-		}
+			Collections.sort(rss, new Comparator<Img>() {
+				@Override
+				public int compare(Img o1, Img o2) {
+					if (o1.getValue() < o2.getValue()) {
+						return -1;
+					} else if (o1.getValue() > o2.getValue()) {
+						return 1;
+					} else {
+						return 0;
+					}
+				}
+			});
 
-		Collections.sort(rss, new Comparator<Img>() {
-			@Override
-			public int compare(Img o1, Img o2) {
-				if (o1.getValue() < o2.getValue()) {
-					return -1;
-				} else if (o1.getValue() > o2.getValue()) {
-					return 1;
-				} else {
-					return 0;
+			int size = (rss.size() > count) ? count : rss.size();
+
+			for (int idx = 0; idx < size;) {
+				Img img = (Img) rss.get(idx);
+				if (idx++ != 0) {
+					sb.append(",");
+				}
+				try {
+					String _url = img.getUrl();
+					double value = img.getValue();
+					sb.append("{\"url\":\"" + _url + "\", \"value\": " + value + "}");
+				} catch (Exception ex) {
+					ex.printStackTrace();
 				}
 			}
-		});
-
-		StringBuffer sb = new StringBuffer("{ \"list\" : [");
-
-		int size = (rss.size() > count) ? count : rss.size();
-
-		for (int idx = 0; idx < size;) {
-			Img img = (Img) rss.get(idx);
-			if (idx++ != 0) {
-				sb.append(",");
-			}
-			try {
-				String _url = img.getUrl();
-				double value = img.getValue();
-				sb.append("{\"url\":\"" + _url + "\", \"value\": " + value + "}");
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
+			sb.append("]}");
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		} finally {
+			jhdPool.returnResource(jedis);
 		}
-		sb.append("]}");
 
 		return sb.toString();
 	}
 
 	@RequestMapping(value = "/querycos", produces = "application/json; charset=utf8")
-	public @ResponseBody String queryImgCOS(@RequestParam(value = "itemkey") String itemkey, @RequestParam(value = "count") int count) {
-		Plamosaic jedis = jhdPool.getClient();
-		List<Double> features;
-		features = jedis.lrangeDouble("0:" + itemkey + "_features", 0, -1);
-		if (features.isEmpty()) {
-			features = jedis.lrangeDouble("1:" + itemkey + "_features", 0, -1);
-			if (features.isEmpty()) {
-				features = jedis.lrangeDouble("2:" + itemkey + "_features", 0, -1);
+	public @ResponseBody String queryImgCOS(@RequestParam(value = "itemkey") String itemkey,
+			@RequestParam(value = "category") String category, @RequestParam(value = "count") int count) {
+		Jedis jedis = jhdPool.getResource();
+		StringBuffer sb = new StringBuffer("{ \"list\" : [");
+		try {
+			List<Double> features;
+			features = jedis.lrangeDouble(itemkey + "_features", 0, -1);
+
+			if (features.isEmpty())
+				return "nothing";
+
+			String queryKey = itemkey + "_temp";
+
+			Pipeline pl = jedis.pipelined();
+			for (int i = 0; i < 18; i++) {
+				pl.rpushDouble(i + ":" + queryKey, ArrayUtils.toPrimitive(features.toArray(new Double[0])));
 			}
-		}
-		if (features.isEmpty())
-			return "nothing";
+			pl.sync();
 
-		String img_url = itemkey + "_temp";
+			pl = jedis.pipelined();
+			List<Response<List<Img>>> rssList = new ArrayList<Response<List<Img>>>();
+			for (int i = 0; i < 18; i++) {
+				rssList.add(pl.csimu(i + ":IMG:" + category, count, i + ":" + queryKey));
+			}
 
-		Pipeline pl = jedis.pipelined();
-		for (double fe : features) {
-			pl.rpushDouble("0:" + img_url, fe);
-			pl.rpushDouble("1:" + img_url, fe);
-			pl.rpushDouble("2:" + img_url, fe);
-		}
-		Response<List<Img>> rs0 = pl.csimu("0:IMG", count, "0:" + img_url);
-		Response<List<Img>> rs1 = pl.csimu("1:IMG", count, "1:" + img_url);
-		Response<List<Img>> rs2 = pl.csimu("2:IMG", count, "2:" + img_url);
+			for (int i = 0; i < 18; i++) {
+				pl.del(i + ":" + queryKey);
+			}
 
-		pl.del("0:" + img_url);
-		pl.del("1:" + img_url);
-		pl.del("2:" + img_url);
+			pl.sync();
 
-		pl.sync();
+			List<Img> rss = new ArrayList<Img>();
+			for (Response<List<Img>> rs : rssList) {
+				rss.addAll(rs.get());
+			}
 
-		List<Img> rss = new ArrayList<Img>();
-		rss.addAll(rs0.get());
-		rss.addAll(rs1.get());
-		rss.addAll(rs2.get());
+			if (rss.size() == 0) {
+				return "nothing";
+			}
 
-		if (rss.size() == 0) {
-			return "nothing";
-		}
+			Collections.sort(rss, new Comparator<Img>() {
+				@Override
+				public int compare(Img o1, Img o2) {
+					if (o1.getValue() < o2.getValue()) {
+						return 1;
+					} else if (o1.getValue() > o2.getValue()) {
+						return -1;
+					} else {
+						return 0;
+					}
+				}
+			});
 
-		Collections.sort(rss, new Comparator<Img>() {
-			@Override
-			public int compare(Img o1, Img o2) {
-				if (o1.getValue() < o2.getValue()) {
-					return 1;
-				} else if (o1.getValue() > o2.getValue()) {
-					return -1;
-				} else {
-					return 0;
+			int size = (rss.size() > count) ? count : rss.size();
+
+			for (int idx = 0; idx < size;) {
+				Img img = (Img) rss.get(idx);
+				if (idx++ != 0) {
+					sb.append(",");
+				}
+				try {
+					String _url = img.getUrl();
+					double value = img.getValue();
+					sb.append("{\"url\":\"" + _url + "\", \"value\": " + value + "}");
+				} catch (Exception ex) {
+					ex.printStackTrace();
 				}
 			}
-		});
-
-		StringBuffer sb = new StringBuffer("{ \"list\" : [");
-
-		int size = (rss.size() > count) ? count : rss.size();
-
-		for (int idx = 0; idx < size;) {
-			Img img = (Img) rss.get(idx);
-			if (idx++ != 0) {
-				sb.append(",");
-			}
-			try {
-				String _url = img.getUrl();
-				double value = img.getValue();
-				sb.append("{\"url\":\"" + _url + "\", \"value\": " + value + "}");
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
+			sb.append("]}");
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		} finally {
+			jhdPool.returnResource(jedis);
 		}
-		sb.append("]}");
-
 		return sb.toString();
 	}
 
@@ -313,7 +324,7 @@ public class DLController {
 	// @RequestMapping(value = "/loadImg", produces = "application/json; charset=utf8")
 	// public @ResponseBody String loadImgJson(@RequestParam(value = "img_list_name") String img_list_name,
 	// @RequestParam(value = "start") long start, @RequestParam(value = "count") long count) {
-	// IMGGenerator img = new IMGGenerator(jhdPool, img_list_name, count, Long.MAX_VALUE);
+	// IMGGenerator img = new IMGGenerator(jhdPool, img_list_name, count);
 	// img.execute();
 	// return "OK";
 	// }
@@ -321,7 +332,7 @@ public class DLController {
 	// @RequestMapping(value = "/loadall", produces = "application/json; charset=utf8")
 	// public @ResponseBody String loadSearchItem(@RequestParam(value = "img_list_name") String img_list_name) {
 	//
-	// IMGGenerator img0 = new IMGGenerator(jhdPool, img_list_name, 30000, Long.MAX_VALUE);
+	// IMGGenerator img0 = new IMGGenerator(jhdPool, img_list_name, 30000);
 	// img0.execute();
 	//
 	// return "OK";
