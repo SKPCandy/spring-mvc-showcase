@@ -31,7 +31,7 @@ public class IMGGenerator implements Runnable {
 	public void run() {
 		Jedis jedis = this.pPool.getResource();
 		try {
-			Set<String> keys = jedis.keys(index + ":IMG*");
+			Set<String> keys = jedis.keys(index + ":IMG:*");
 			Iterator<String> kk = keys.iterator();
 
 			while (kk.hasNext()) {
@@ -56,7 +56,6 @@ public class IMGGenerator implements Runnable {
 		} finally {
 			pPool.returnResource(jedis);
 		}
-
 		pPool.destroy();
 	}
 
@@ -71,6 +70,7 @@ public class IMGGenerator implements Runnable {
 		for (int i = 0; i < 18; i++) {
 			es.execute(new IMGGenerator("IMG", 1000, ips[i], ports[i], i));
 		}
+		
 		if (es.isTerminated()) {
 			System.out.println("end");
 		}

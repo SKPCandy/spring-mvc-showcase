@@ -25,15 +25,28 @@
         <a class="carousel_direction carousel_direction--prev">&lt;</a>
         <div class="carousels">
             <a href="#" data-item="0:1365421568,1455" class="carousel"><img src="http://175.126.56.112/october_11st/1365421568.jpg" class="carousel__image"></a>
-            <a href="#" data-item="0:1361814879,15878" class="carousel"><img src="http://175.126.56.112/october_11st/1361814879.jpg" class="carousel__image"></a>
+            <a href="#" data-item="0:1347636714,15878" class="carousel"><img src="http:////175.126.56.112/october_11st/1347636714.jpg" class="carousel__image"></a>
             <a href="#" data-item="0:1361906094,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1361906094.jpg" class="carousel__image"></a>
-            <a href="#" data-item="0:1350202427,1612" class="carousel"><img src="http://175.126.56.112/october_11st/956444514.jpg" class="carousel__image"></a>
+            <a href="#" data-item="0:1231301968,1612" class="carousel"><img src="http://175.126.56.112/october_11st/1231301968.jpg" class="carousel__image"></a>
             <a href="#" data-item="0:1360216839,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1360216839.jpg" class="carousel__image"></a>
             <a href="#" data-item="0:1276017349,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1276017349.jpg" class="carousel__image"></a>
             <a href="#" data-item="0:1362077000,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1362077000.jpg" class="carousel__image"></a>
             <a href="#" data-item="0:1374329288,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1374329288.jpg" class="carousel__image"></a>
             <a href="#" data-item="0:1306435438,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1306435438.jpg" class="carousel__image"></a>
-            
+        </div>
+        <a class="carousel_direction carousel_direction--next carousel_direction--has">&gt;</a>
+    </div>
+        <div class="carousel_container">
+        <a class="carousel_direction carousel_direction--prev">&lt;</a>
+        <div class="carousels">
+            <a href="#" data-item="7:240634989,15993" class="carousel"><img src="http://175.126.56.112/october_11st/240634989.jpg" class="carousel__image"></a>
+            <a href="#" data-item="7:1269729947,15993" class="carousel"><img src="http://175.126.56.112/october_11st/1269729947.jpg" class="carousel__image"></a>
+            <a href="#" data-item="7:1248526364,15993" class="carousel"><img src="http://175.126.56.112/october_11st/1248526364.jpg" class="carousel__image"></a>
+            <a href="#" data-item="7:1049801268,15993" class="carousel"><img src="http://175.126.56.112/october_11st/1049801268.jpg" class="carousel__image"></a>
+            <a href="#" data-item="7:1346376867,15993" class="carousel"><img src="http://175.126.56.112/october_11st/1346376867.jpg" class="carousel__image"></a>
+            <a href="#" data-item="7:1322518646,15993" class="carousel"><img src="http://175.126.56.112/october_11st/1322518646.jpg" class="carousel__image"></a>
+            <a href="#" data-item="7:1268052526,15993" class="carousel"><img src="http://175.126.56.112/october_11st/1268052526.jpg" class="carousel__image"></a>
+            <a href="#" data-item="7:901437576,15993" class="carousel"><img src="http://175.126.56.112/october_11st/901437576.jpg" class="carousel__image"></a>
         </div>
         <a class="carousel_direction carousel_direction--next carousel_direction--has">&gt;</a>
     </div>
