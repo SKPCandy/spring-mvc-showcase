@@ -61,6 +61,7 @@ public class DLController {
 
 			pl = jedis.pipelined();
 			List<Response<List<Img>>> rssList = new ArrayList<Response<List<Img>>>();
+			long s = System.currentTimeMillis();
 			for (int i = 0; i < 18; i++) {
 				rssList.add(pl.hdist(i + ":IMG:" + category, count, i + ":" + queryKey));
 			}
@@ -70,6 +71,8 @@ public class DLController {
 			}
 
 			pl.sync();
+			long e = System.currentTimeMillis();
+			System.out.println("queryhd :" + (e - s));
 
 			List<Img> rss = new ArrayList<Img>();
 			for (int i = 0; i < 18; i++) {
@@ -141,6 +144,7 @@ public class DLController {
 
 			pl = jedis.pipelined();
 			List<Response<List<Img>>> rssList = new ArrayList<Response<List<Img>>>();
+			long s = System.currentTimeMillis();
 			for (int i = 0; i < 18; i++) {
 				rssList.add(pl.udist(i + ":IMG:" + category, count, i + ":" + queryKey));
 			}
@@ -150,6 +154,8 @@ public class DLController {
 			}
 
 			pl.sync();
+			long e = System.currentTimeMillis();
+			System.out.println("queryud :" + (e - s));
 
 			List<Img> rss = new ArrayList<Img>();
 			for (Response<List<Img>> rs : rssList) {
@@ -220,6 +226,7 @@ public class DLController {
 
 			pl = jedis.pipelined();
 			List<Response<List<Img>>> rssList = new ArrayList<Response<List<Img>>>();
+			long s = System.currentTimeMillis();
 			for (int i = 0; i < 18; i++) {
 				rssList.add(pl.csimu(i + ":IMG:" + category, count, i + ":" + queryKey));
 			}
@@ -229,6 +236,8 @@ public class DLController {
 			}
 
 			pl.sync();
+			long e = System.currentTimeMillis();
+			System.out.println("querycos :" + (e - s));
 
 			List<Img> rss = new ArrayList<Img>();
 			for (Response<List<Img>> rs : rssList) {
