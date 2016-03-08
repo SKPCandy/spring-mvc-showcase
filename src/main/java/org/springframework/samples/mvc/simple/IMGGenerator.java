@@ -32,7 +32,7 @@ public class IMGGenerator implements Runnable {
 			Set<String> keys = jedis.keys("*:IMG:*");
 			Iterator<String> kk = keys.iterator();
 			String key = kk.next();
-			String allKeys = key.substring(0, 1) + ":IMGg:all";
+			String allKeys = key.substring(0, key.indexOf(":")) + ":IMG:ALL";
 
 			while (kk.hasNext()) {
 				String kkl = kk.next();

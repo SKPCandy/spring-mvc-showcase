@@ -17,6 +17,7 @@
     <div class="carousel_handlebar">
         <label for="image_category">Category: </label>
         <select id="image_category" name="image_category">
+            <option value="ALL">all</option>
             <option value="1455">1455</option>
             <option value="15878">15878</option>
             <option value="127682">127682</option>
