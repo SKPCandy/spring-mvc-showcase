@@ -14,6 +14,19 @@ var _itemId;
 		queryImage(['hd', 'ud', 'cos'], _itemId, event.currentTarget.value);
 	});
 	
+	var carousel = $('#carousel');
+
+	carousel.owlCarousel({
+		items: 5
+	});
+
+	$('.carousel_direction--prev').on('click', function() {
+		carousel.trigger('owl.prev');
+	});
+
+	$('.carousel_direction--next').on('click', function() {
+		carousel.trigger('owl.next');
+	});
 })();
 
 function queryItems() {

@@ -12,7 +12,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 
-public class IMGGenerator4 {
+public class IMGGenerator5 {
 
 	JedisPool pPool;
 	Jedis jedis;
@@ -24,15 +24,15 @@ public class IMGGenerator4 {
 	public static void main(String args[]) {
 		JedisPool jhdPool = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.205", 19000, 2000000, "a1234");
 
-		IMGGenerator4 ig = new IMGGenerator4(jhdPool, "IMG", 200000);
+		IMGGenerator5 ig = new IMGGenerator5(jhdPool, "IMG", 200000);
 		ig.execute();
 
 		jhdPool.destroy();
 	}
 
-	public IMGGenerator4(JedisPool pPool, String img_list_name, long maxsize) {
+	public IMGGenerator5(JedisPool pPool, String img_list_name, long maxsize) {
 		this.pPool = pPool;
-		this.dir = "/Users/horanghi/dlimg/2";
+		this.dir = "/Users/horanghi/dlimg/3";
 		this.img_list_name = img_list_name;
 		this.maxsize = maxsize;
 

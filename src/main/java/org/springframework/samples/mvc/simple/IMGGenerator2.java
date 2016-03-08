@@ -95,7 +95,6 @@ public class IMGGenerator2 {
 
 		for (String line : lines) {
 
-			int preint = (index % 18);
 			/*
 			 * 
 			 * <contentid>\t<categoryid>\t<category name>\t<detected name>\t<local filename>\t<color feature>\t<hamming deep feature>\t<float deep feature>\t<duplicate signature>\t<extra flag>\n
@@ -116,17 +115,33 @@ public class IMGGenerator2 {
 			String[] cons = line.split("\t");
 
 			String contentid = cons[0];
+			int preint = (Integer.valueOf(contentid) % 18);
 			String category = cons[1];
 			String url = "http://175.126.56.112/october_11st" + cons[4].substring(cons[4].lastIndexOf("/"));
-			String hds = cons[6];
+			String colors_features = cons[5];
+			String hds_signatures = cons[6];
 			String features = cons[7];
-			// String duplicate = cons[8];
+			String duplicate_signatures = cons[8];
+
+			if (colors_features == null || colors_features.split(",").length != 166) {
+				continue;
+			}
+			if (hds_signatures == null || hds_signatures.split(",").length != 144) {
+				continue;
+			}
+			if (features == null || features.split(",").length != 9216) {
+				continue;
+			}
+			if (duplicate_signatures == null || duplicate_signatures.split(",").length != 50) {
+				continue;
+			}
 
 			String IMG_LIST = preint + ":" + img_list_name + ":" + category;
 			String ID = preint + ":" + contentid;
+			String Colors = ID + "_color_features";
 			String Features = ID + "_features";
 			String HD = ID + "_signatures";
-			// String Duplicates = preint + ":" + img_list_name + index + "_d_signatures";
+			String Duplicates = ID + "_dup_signatures";
 
 			if (maxsize < index++) {
 				pl.sync();
@@ -135,6 +150,13 @@ public class IMGGenerator2 {
 
 			pl.rpush(IMG_LIST, ID);
 			pl.set(ID, url);
+			String[] cols = colors_features.split(",");
+			double[] colls = new double[cols.length];
+			for (int i = 0; i < cols.length; i++) {
+				colls[i] = Double.valueOf(cols[i]);
+			}
+			pl.rpushDouble(Colors, colls);
+
 			String[] fs = features.split(",");
 			double[] ds = new double[fs.length];
 			for (int i = 0; i < fs.length; i++) {
@@ -142,7 +164,8 @@ public class IMGGenerator2 {
 			}
 			pl.rpushDouble(Features, ds);
 
-			pl.rpush(HD, hds.split(","));
+			pl.rpush(HD, hds_signatures.split(","));
+			pl.rpush(Duplicates, duplicate_signatures.split(","));
 
 			if (index % 20000 == 0) {
 				pl.sync();

@@ -18,45 +18,77 @@ public class IMGGenerator implements Runnable {
 	int signatures = 144;
 	String ip;
 	int port;
-	final int index;
 
-	public IMGGenerator(String img_list_name, long maxsize, String ip, int port, int i) {
+	public IMGGenerator(String img_list_name, long maxsize, String ip, int port) {
 		this.pPool = new JedisPool(new GenericObjectPoolConfig(), ip, port, 200000, "1234", 11);
 		this.img_list_name = img_list_name;
 		this.ip = ip;
 		this.port = port;
-		this.index = i;
 	}
 
 	public void run() {
 		Jedis jedis = this.pPool.getResource();
 		try {
-			Set<String> keys = jedis.keys(index + ":IMG:*");
+			Set<String> keys = jedis.keys("*:IMG:*");
 			Iterator<String> kk = keys.iterator();
+			String key = kk.next();
+			String allKeys = key.substring(0, 1) + ":IMGg:all";
 
 			while (kk.hasNext()) {
 				String kkl = kk.next();
-				System.out.println(kkl);
-				String category = kkl.substring(kkl.lastIndexOf(":") + 1); // category
 				List<String> klist = jedis.lrange(kkl, 0, -1);
-				for (String sk : klist) {
-					long sizeFeatures = jedis.llenDouble(sk + "_features");
-					long sizeSignatures = jedis.llen(sk + "_signatures");
-					if (featureSize != sizeFeatures || signatures != sizeSignatures) {
-						// System.out.println(sk +", "+ index + ":IMG:" + category);
-						jedis.lrem(index + ":IMG:" + category, 1, sk);
-						jedis.del(sk + "_features", sk + "_signatures", sk);
-					}
-
-				}
-
+				jedis.rpush(allKeys, klist.toArray(new String[0]));
 			}
+
+			// 
+			// jedis.rpush(allKeys, klist.toArray(new String[0]));
+
+			// for (int i = 0; i < klist.size(); i++) {
+			// String keyid = klist.get(i);
+			// String dupKeys_ID = keyid + "_dup";
+			// String colorKeys_ID = keyid + "_color";
+			// jedis.set(dupKeys_ID, "1");
+			// jedis.set(colorKeys_ID, "1");
+			// }
+
+			// String[] _duarray = klist.toArray(new String[0]);
+			// String[] duarray = new String[_duarray.length];
+			// for(int i = 0 ; i < _duarray.length ; i++){
+			// duarray[i] = _duarray[i]+"_dup";
+			// }
+			//
+			// jedis.rpush(dupKeys, duarray);
+			//
+			// String[] _colors = klist.toArray(new String[0]);
+			// String[] colors = new String[_colors.length];
+			// for(int i = 0 ; i < _colors.length ; i++){
+			// colors[i] = _colors[i]+"_color";
+			// }
+			//
+			// jedis.rpush(colorKeys, colors);
+			//
+			// jedis.rpush(allKeys, klist.toArray(new String[0]));
+
+			// System.out.println(index + ":IMG:ALL " + klist.toArray(new String[0]));
+			// jedis.rpush(index + ":IMG:ALL", klist.toArray(new String[0]));
+			// for (String sk : klist) {
+			// long sizeFeatures = jedis.llenDouble(sk + "_features");
+			// long sizeSignatures = jedis.llen(sk + "_signatures");
+			// if (featureSize != sizeFeatures || signatures != sizeSignatures) {
+			// // System.out.println(sk +", "+ index + ":IMG:" + category);
+			// jedis.lrem(index + ":IMG:" + category, 1, sk);
+			// jedis.del(sk + "_features", sk + "_signatures", sk);
+			// }
+			//
+			// }
+
+			// }
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		} finally {
 			pPool.returnResource(jedis);
 		}
-		pPool.destroy();
+		
 	}
 
 	public static void main(String args[]) {
@@ -68,9 +100,9 @@ public class IMGGenerator implements Runnable {
 
 		ExecutorService es = Executors.newFixedThreadPool(20);
 		for (int i = 0; i < 18; i++) {
-			es.execute(new IMGGenerator("IMG", 1000, ips[i], ports[i], i));
+			es.execute(new IMGGenerator("IMG", 1000, ips[i], ports[i]));
 		}
-		
+
 		if (es.isTerminated()) {
 			System.out.println("end");
 		}

@@ -65,14 +65,16 @@ table {
 }
 
 .carousel_handlebar {
-	margin-top: 22px;
+	margin: 22px auto 0;
+	width: 924px;
 	text-align: right;
 }
 
 .carousel_container {
-	margin-top: 5px;
-	padding: 12px;
+	margin: 5px auto 0;
+	padding: 12px 47px;
 	position: relative;
+	width: 830px;
 	height: 150px;
 	border: 1px solid #ccc;
 	border-radius: 6px;
@@ -80,7 +82,6 @@ table {
 }
 
 .carousels {
-	padding: 0 35px;
 	height: 100%;
 	overflow: hidden;
 }
