@@ -9,33 +9,42 @@ import java.util.List;
 
 import javax.annotation.PreDestroy;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.jayway.jsonpath.JsonPath;
+import com.skplanet.mosaic.Pipeline;
+import com.skplanet.mosaic.Plamosaic;
+import com.skplanet.mosaic.PlamosaicPool;
 
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Response;
 import redis.clients.spatial.model.Img;
 
 @Controller
 public class DLController {
 
-	JedisPool jhdPool = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.205", 19000, 20000, "a1234");
+	// JedisPool jhdPool = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.204", 19000, 20000, "a1234");
+	PlamosaicPool jhdPool = new PlamosaicPool("172.19.114.204", 19000, "a1234");
 
 	// String stringUrlPrefix = "http://175.126.56.112:15003/mosaic_request_handler?url=";
+
+	final int shardNumber = 20;
+
+	String[] items = { "6:1356058666", "6:1238644826", "6:1324210846", "6:1268597626", "6:1168155726", "6:1033685646", "6:1135260186",
+			"6:1310023266", "6:1317709706", "6:1357380726", "6:1246028586", "6:1228676906", "6:1336180826", "6:1267035106", "6:1284120106",
+			"6:1284089486", "6:1339558346", "6:1354034426", "6:1086388586", "6:1165533606", "6:1365048606", "6:1047017306", "6:1264711726",
+			"6:1097431626", "6:1249377666", "6:1215089086", "6:1372467046", "6:1280178486", "6:1156098146", "6:1338187046",
+			"6:1096762086" };
 
 	@PreDestroy
 	public void release() {
 		try {
-			jhdPool.destroy();
+			// jhdPool.destroy();
+			jhdPool.release();
 		} finally {
 		}
 	}
@@ -43,114 +52,99 @@ public class DLController {
 	@RequestMapping(value = "/queryhd", produces = "application/json; charset=utf8")
 	public @ResponseBody String queryImgHD(@RequestParam(value = "itemkey") String itemkey,
 			@RequestParam(value = "category") String category, @RequestParam(value = "count") int count) {
-		final Jedis jedis = jhdPool.getResource();
+		final Plamosaic jedis = jhdPool.getClient();
 		StringBuffer sb = new StringBuffer("{ \"list\" : [");
-		try {
-			int shid = Integer.valueOf(itemkey) % 18;
-			List<String> signatures;
-			signatures = jedis.lrange(shid + ":" + itemkey + "_signatures", 0, -1);
-			final List<Double> orgin = jedis.lrangeDouble(shid + ":" + itemkey + "_color_features", 0, -1);
-			if (signatures.isEmpty())
-				return "nothing";
 
-			String queryKey = itemkey + "_temp";
+		int shid = Integer.valueOf(itemkey) % shardNumber;
+		List<String> signatures;
+		signatures = jedis.lrange(shid + ":" + itemkey + "_signatures", 0, -1);
+		final List<Double> orgin = jedis.lrangeDL(shid + ":" + itemkey + "_color_features", 0, -1);
+		if (signatures.size() == 0) {
+			return "nothing";
+		}
 
-			Pipeline pl = jedis.pipelined();
-			for (int i = 0; i < 18; i++) {
-				pl.rpush(i + ":" + queryKey, signatures.toArray(new String[0]));
-			}
-			pl.sync();
+		Pipeline pl = jedis.pipelined();
 
-			pl = jedis.pipelined();
-			List<Response<List<Img>>> rssList = new ArrayList<Response<List<Img>>>();
-			long s = System.currentTimeMillis();
-			for (int i = 0; i < 18; i++) {
-				rssList.add(pl.hdist(i + ":IMG:" + category, count, i + ":" + queryKey));
-			}
-			for (int i = 0; i < 18; i++) {
-				pl.del(i + ":" + queryKey);
-			}
+		List<Response<List<Img>>> rssList = new ArrayList<Response<List<Img>>>();
+		long s = System.currentTimeMillis();
+		for (int i = 0; i < shardNumber; i++) {
+			rssList.add(pl.hdistByList(i + ":IMG:" + category, count, signatures.toArray(new String[0])));
+		}
 
-			pl.sync();
-			long e = System.currentTimeMillis();
-			System.out.println("queryhd :" + (e - s));
+		pl.sync();
+		long e = System.currentTimeMillis();
+		System.out.println("[Con] queryhd :" + (e - s));
 
-			List<Img> rss = new ArrayList<Img>();
-			for (int i = 0; i < 18; i++) {
+		List<Img> rss = new ArrayList<Img>();
+		for (int i = 0; i < shardNumber; i++) {
+			if (rssList.get(i).get() != null) {
 				rss.addAll(rssList.get(i).get());
 			}
+		}
 
-			if (rss.size() == 0) {
-				return "nothing";
+		if (rss.size() == 0) {
+			return "nothing";
+		}
+
+		// sort by hamming distance
+		Collections.sort(rss, new Comparator<Img>() {
+			@Override
+			public int compare(Img o1, Img o2) {
+				int a1 = (int) (o1.getValue());
+				int a2 = (int) (o2.getValue());
+				if (a1 < a2) {
+					return -1;
+				} else if (a1 > a2) {
+					return 1;
+				} else {
+					return 0;
+				}
 			}
+		});
 
-			// sort by hamming distance
-			Collections.sort(rss, new Comparator<Img>() {
-				@Override
-				public int compare(Img o1, Img o2) {
-					int a1 = (int) (o1.getValue());
-					int a2 = (int) (o2.getValue());
-					if (a1 < a2) {
+		int size = (rss.size() > count) ? count : rss.size();
+		rss = rss.subList(0, size);
+
+		// sort by HD / UD(color)
+		Collections.sort(rss, new Comparator<Img>() {
+			@Override
+			public int compare(Img o1, Img o2) {
+				int a1 = (int) (o1.getValue() / 200);
+				int a2 = (int) (o2.getValue() / 200);
+				if (a1 < a2) {
+					return -1;
+				} else if (a1 > a2) {
+					return 1;
+				} else {
+					List<Double> c01 = jedis.lrangeDL(o1.getId() + "_color_features", 0, -1);
+					List<Double> c02 = jedis.lrangeDL(o2.getId() + "_color_features", 0, -1);
+					double res01 = calculateUDistance(orgin.toArray(new Double[0]), c01.toArray(new Double[0]));
+					double res02 = calculateUDistance(orgin.toArray(new Double[0]), c02.toArray(new Double[0]));
+					if (res01 < res02) {
 						return -1;
-					} else if (a1 > a2) {
+					} else if (res01 > res02) {
 						return 1;
 					} else {
 						return 0;
 					}
 				}
-			});
-
-			int size = (rss.size() > count) ? count : rss.size();
-			rss = rss.subList(0, size);
-
-			// sort by HD / UD(color)
-			Collections.sort(rss, new Comparator<Img>() {
-				@Override
-				public int compare(Img o1, Img o2) {
-					int a1 = (int) (o1.getValue() / 200);
-					int a2 = (int) (o2.getValue() / 200);
-					if (a1 < a2) {
-						return -1;
-					} else if (a1 > a2) {
-						return 1;
-					} else {
-						List<Double> c01 = jedis.lrangeDouble(o1.getId() + "_color_features", 0, -1);
-						List<Double> c02 = jedis.lrangeDouble(o2.getId() + "_color_features", 0, -1);
-						double res01 = calculateUDistance(orgin.toArray(new Double[0]), c01.toArray(new Double[0]));
-						double res02 = calculateUDistance(orgin.toArray(new Double[0]), c02.toArray(new Double[0]));
-						if (res01 < res02) {
-							return -1;
-						} else if (res01 > res02) {
-							return 1;
-						} else {
-							return 0;
-						}
-					}
-				}
-			});
-
-			for (int idx = 0; idx < size;) {
-				Img img = (Img) rss.get(idx);
-				if (idx++ != 0) {
-					sb.append(",");
-				}
-				try {
-					String _url = img.getUrl();
-					double value = img.getValue();
-					sb.append("{\"url\":\"" + _url + "\", \"value\": " + value + "}");
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
 			}
-			sb.append("]}");
+		});
 
-		} catch (
-
-		Exception ex) {
-			ex.printStackTrace();
-		} finally {
-			jhdPool.returnResource(jedis);
+		for (int idx = 0; idx < size;) {
+			Img img = (Img) rss.get(idx);
+			if (idx++ != 0) {
+				sb.append(",");
+			}
+			try {
+				String _url = img.getUrl();
+				double value = img.getValue();
+				sb.append("{\"url\":\"" + _url + "\", \"value\": " + value + "}");
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
 		}
+		sb.append("]}");
 
 		return sb.toString();
 	}
@@ -184,82 +178,68 @@ public class DLController {
 	@RequestMapping(value = "/queryud", produces = "application/json; charset=utf8")
 	public @ResponseBody String queryImgUD(@RequestParam(value = "itemkey") String itemkey,
 			@RequestParam(value = "category") String category, @RequestParam(value = "count") int count) {
-		Jedis jedis = jhdPool.getResource();
+		Plamosaic jedis = jhdPool.getClient();
 		StringBuffer sb = new StringBuffer("{ \"list\" : [");
-		try {
-			int shid = Integer.valueOf(itemkey) % 18;
-			List<Double> features;
-			features = jedis.lrangeDouble(shid + ":" + itemkey + "_features", 0, -1);
 
-			if (features.isEmpty())
-				return "nothing";
+		int shid = Integer.valueOf(itemkey) % shardNumber;
+		List<Double> features;
+		features = jedis.lrangeDL(shid + ":" + itemkey + "_features", 0, -1);
 
-			String queryKey = itemkey + "_temp";
+		Pipeline pl = jedis.pipelined();
+		List<Response<List<Img>>> rssList = new ArrayList<Response<List<Img>>>();
 
-			Pipeline pl = jedis.pipelined();
-			for (int i = 0; i < 18; i++) {
-				pl.rpushDouble(i + ":" + queryKey, ArrayUtils.toPrimitive(features.toArray(new Double[0])));
-			}
-			pl.sync();
+		double[] fslist = new double[features.size()];
+		for (int i = 0; i < features.size(); i++) {
+			fslist[i] = features.get(i);
+		}
+		long s = System.currentTimeMillis();
+		for (int i = 0; i < shardNumber; i++) {
+			rssList.add(pl.udistByList(i + ":IMG:" + category, count, fslist));
+		}
 
-			pl = jedis.pipelined();
-			List<Response<List<Img>>> rssList = new ArrayList<Response<List<Img>>>();
-			long s = System.currentTimeMillis();
-			for (int i = 0; i < 18; i++) {
-				rssList.add(pl.udist(i + ":IMG:" + category, count, i + ":" + queryKey));
-			}
+		pl.sync();
+		long e = System.currentTimeMillis();
 
-			for (int i = 0; i < 18; i++) {
-				pl.del(i + ":" + queryKey);
-			}
-
-			pl.sync();
-			long e = System.currentTimeMillis();
-			System.out.println("queryud :" + (e - s));
-
-			List<Img> rss = new ArrayList<Img>();
-			for (Response<List<Img>> rs : rssList) {
+		List<Img> rss = new ArrayList<Img>();
+		for (Response<List<Img>> rs : rssList) {
+			if (rs.get() != null) {
 				rss.addAll(rs.get());
 			}
-
-			if (rss.size() == 0) {
-				return "nothing";
-			}
-
-			Collections.sort(rss, new Comparator<Img>() {
-				@Override
-				public int compare(Img o1, Img o2) {
-					if (o1.getValue() < o2.getValue()) {
-						return -1;
-					} else if (o1.getValue() > o2.getValue()) {
-						return 1;
-					} else {
-						return 0;
-					}
-				}
-			});
-
-			int size = (rss.size() > count) ? count : rss.size();
-
-			for (int idx = 0; idx < size;) {
-				Img img = (Img) rss.get(idx);
-				if (idx++ != 0) {
-					sb.append(",");
-				}
-				try {
-					String _url = img.getUrl();
-					double value = img.getValue();
-					sb.append("{\"url\":\"" + _url + "\", \"value\": " + value + "}");
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
-			}
-			sb.append("]}");
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		} finally {
-			jhdPool.returnResource(jedis);
 		}
+
+		if (rss.size() == 0) {
+			return "nothing";
+		}
+
+		Collections.sort(rss, new Comparator<Img>() {
+			@Override
+			public int compare(Img o1, Img o2) {
+				if (o1.getValue() < o2.getValue()) {
+					return -1;
+				} else if (o1.getValue() > o2.getValue()) {
+					return 1;
+				} else {
+					return 0;
+				}
+			}
+		});
+
+		int size = (rss.size() > count) ? count : rss.size();
+
+		for (int idx = 0; idx < size;) {
+			Img img = (Img) rss.get(idx);
+			if (idx++ != 0) {
+				sb.append(",");
+			}
+			try {
+				String _url = img.getUrl();
+				double value = img.getValue();
+				sb.append("{\"url\":\"" + _url + "\", \"value\": " + value + "}");
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		}
+		sb.append("]}");
 
 		return sb.toString();
 	}
@@ -273,82 +253,72 @@ public class DLController {
 	@RequestMapping(value = "/querycos", produces = "application/json; charset=utf8")
 	public @ResponseBody String queryImgCOS(@RequestParam(value = "itemkey") String itemkey,
 			@RequestParam(value = "category") String category, @RequestParam(value = "count") int count) {
-		Jedis jedis = jhdPool.getResource();
+		Plamosaic jedis = jhdPool.getClient();
 		StringBuffer sb = new StringBuffer("{ \"list\" : [");
-		try {
-			int shid = Integer.valueOf(itemkey) % 18;
-			List<Double> features;
-			features = jedis.lrangeDouble(shid + ":" + itemkey + "_features", 0, -1);
 
-			if (features.isEmpty())
-				return "nothing";
+		int shid = Integer.valueOf(itemkey) % shardNumber;
+		List<Double> features = new ArrayList<Double>();
+		features.addAll(jedis.lrangeDL(shid + ":" + itemkey + "_features", 0, -1));
 
-			String queryKey = itemkey + "_temp";
+		Pipeline pl = jedis.pipelined();
+		pl = jedis.pipelined();
+		List<Response<List<Img>>> rssList = new ArrayList<Response<List<Img>>>();
+		long s = System.currentTimeMillis();
 
-			Pipeline pl = jedis.pipelined();
-			for (int i = 0; i < 18; i++) {
-				pl.rpushDouble(i + ":" + queryKey, ArrayUtils.toPrimitive(features.toArray(new Double[0])));
-			}
-			pl.sync();
+		double[] fslist = new double[features.size()];
+		for (int i = 0; i < features.size(); i++) {
+			fslist[i] = features.get(i);
+		}
+		for (int i = 0; i < shardNumber; i++) {
+			rssList.add(pl.csimuByList(i + ":IMG:" + category, count, fslist));
+		}
 
-			pl = jedis.pipelined();
-			List<Response<List<Img>>> rssList = new ArrayList<Response<List<Img>>>();
-			long s = System.currentTimeMillis();
-			for (int i = 0; i < 18; i++) {
-				rssList.add(pl.csimu(i + ":IMG:" + category, count, i + ":" + queryKey));
-			}
+		pl.sync();
+		long e = System.currentTimeMillis();
+		System.out.println("[Con] querycos :" + (e - s));
 
-			for (int i = 0; i < 18; i++) {
-				pl.del(i + ":" + queryKey);
-			}
-
-			pl.sync();
-			long e = System.currentTimeMillis();
-			System.out.println("querycos :" + (e - s));
-
-			List<Img> rss = new ArrayList<Img>();
-			for (Response<List<Img>> rs : rssList) {
+		List<Img> rss = new ArrayList<Img>();
+		for (Response<List<Img>> rs : rssList) {
+			if (rs != null || rs.get() != null) {
 				rss.addAll(rs.get());
 			}
 
-			if (rss.size() == 0) {
-				return "nothing";
-			}
-
-			Collections.sort(rss, new Comparator<Img>() {
-				@Override
-				public int compare(Img o1, Img o2) {
-					if (o1.getValue() < o2.getValue()) {
-						return 1;
-					} else if (o1.getValue() > o2.getValue()) {
-						return -1;
-					} else {
-						return 0;
-					}
-				}
-			});
-
-			int size = (rss.size() > count) ? count : rss.size();
-
-			for (int idx = 0; idx < size;) {
-				Img img = (Img) rss.get(idx);
-				if (idx++ != 0) {
-					sb.append(",");
-				}
-				try {
-					String _url = img.getUrl();
-					double value = img.getValue();
-					sb.append("{\"url\":\"" + _url + "\", \"value\": " + value + "}");
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
-			}
-			sb.append("]}");
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		} finally {
-			jhdPool.returnResource(jedis);
 		}
+
+		if (rss.size() == 0) {
+			return "nothing";
+		}
+
+		Collections.sort(rss, new Comparator<Img>() {
+			@Override
+			public int compare(Img o1, Img o2) {
+				if (o1.getValue() < o2.getValue()) {
+					return 1;
+				} else if (o1.getValue() > o2.getValue()) {
+					return -1;
+				} else {
+					return 0;
+				}
+			}
+		});
+
+		int size = (rss.size() > count) ? count : rss.size();
+
+		for (int idx = 0; idx < size;) {
+			Img img = (Img) rss.get(idx);
+			if (idx++ != 0) {
+				sb.append(",");
+			}
+			try {
+				String _url = img.getUrl();
+				double value = img.getValue();
+				sb.append("{\"url\":\"" + _url + "\", \"value\": " + value + "}");
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		}
+		sb.append("]}");
+
 		return sb.toString();
 	}
 
@@ -358,76 +328,71 @@ public class DLController {
 
 		for (int cidx = 0; cidx < 1; cidx++) {
 			long s = System.currentTimeMillis();
-			Jedis jedis = jhdPool.getResource();
+			Plamosaic jedis = jhdPool.getClient();
 			List<String> cdkeys = new ArrayList<String>();
-			for (int i = 0; i < 18; i++) {
-				cdkeys.addAll(jedis.keys(i + ":IMG:" + cats[cidx]));
+
+			for (int i = 0; i < shardNumber; i++) {
+				cdkeys.add(i + ":IMG:" + cats[cidx]);
 			}
-			try {
-				for (String key : cdkeys.toArray(new String[0])) {
-					// key 지정
-					// 1.get dup signatures
-					List<String> dupsig = jedis.lrange(key + "_dup_signatures", 0, -1);
 
-					Pipeline pl = jedis.pipelined();
-					for (int j = 0; j < 18; j++) {
-						pl.rpush(j + ":" + key + ":DUP_sig", dupsig.toArray(new String[0]));
-					}
-					pl.sync();
+			for (String key : cdkeys.toArray(new String[0])) {
+				// key 지정
+				// 1.get dup signatures
+				List<String> dupsig = jedis.lrange(key + "_dup_signatures", 0, -1);
 
-					pl = jedis.pipelined();
-					List<Response<List<Img>>> dupkeys = new ArrayList<Response<List<Img>>>();
-
-					for (int j = 0; j < 18; j++) {
-						dupkeys.add((Response<List<Img>>) pl.hdist(j + ":IMGg:dup", 50, j + ":" + key + ":DUP_sig"));
-						System.out.println("hdist " + j + ":IMGg:dup 50 by " + j + ":" + key + ":DUP_sig");
-					}
-					pl.sync();
-					List<Img> imgList = new ArrayList<Img>();
-					Iterator<Response<List<Img>>> result = dupkeys.iterator();
-
-					while (result.hasNext()) {
-						Response<List<Img>> rs = (Response<List<Img>>) result.next();
-						if (rs.get() != null) {
-							imgList.addAll((List<Img>) rs.get());
-						} else {
-							System.out.println("null");
-						}
-					}
-					// pl = jedis.pipelined();
-					// for (int j = 0; j < 18; j++) {
-					// pl.del(j + ":" + key + ":DUP_sig");
-					// }
-					// pl.sync();
-
-					Collections.sort(imgList, new Comparator<Img>() {
-						@Override
-						public int compare(Img o1, Img o2) {
-							if (o1.getValue() < o2.getValue()) {
-								return -1;
-							} else if (o1.getValue() > o2.getValue()) {
-								return 1;
-							} else {
-								return 0;
-							}
-						}
-					});
-					int lim = 0;
-					for (Img img : imgList.toArray(new Img[0])) {
-						System.out.println(img.toString());
-						if (lim++ > 20) {
-							break;
-						}
-					}
-					System.out.println("dup size :" + imgList.size());
+				Pipeline pl = jedis.pipelined();
+				for (int j = 0; j < shardNumber; j++) {
+					pl.rpush(j + ":" + key + ":DUP_sig", dupsig.toArray(new String[0]));
 				}
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			} finally {
-				jhdPool.returnResource(jedis);
+				pl.sync();
+
+				pl = jedis.pipelined();
+				List<Response<List<Img>>> dupkeys = new ArrayList<Response<List<Img>>>();
+
+				for (int j = 0; j < shardNumber; j++) {
+					dupkeys.add((Response<List<Img>>) pl.hdistByMember(j + ":IMGg:dup", 50, j + ":" + key + ":DUP_sig"));
+					System.out.println("[Con] hdist " + j + ":IMGg:dup 50 by " + j + ":" + key + ":DUP_sig");
+				}
+				pl.sync();
+				List<Img> imgList = new ArrayList<Img>();
+				Iterator<Response<List<Img>>> result = dupkeys.iterator();
+
+				while (result.hasNext()) {
+					Response<List<Img>> rs = (Response<List<Img>>) result.next();
+					if (rs.get() != null) {
+						imgList.addAll((List<Img>) rs.get());
+					} else {
+						System.out.println("[Con] null");
+					}
+				}
+				// pl = jedis.pipelined();
+				// for (int j = 0; j < shardNumber; j++) {
+				// pl.del(j + ":" + key + ":DUP_sig");
+				// }
+				// pl.sync();
+
+				Collections.sort(imgList, new Comparator<Img>() {
+					@Override
+					public int compare(Img o1, Img o2) {
+						if (o1.getValue() < o2.getValue()) {
+							return -1;
+						} else if (o1.getValue() > o2.getValue()) {
+							return 1;
+						} else {
+							return 0;
+						}
+					}
+				});
+				int lim = 0;
+				for (Img img : imgList.toArray(new Img[0])) {
+					if (lim++ > 20) {
+						break;
+					}
+				}
 			}
+
 			long e = System.currentTimeMillis();
-			System.out.println("time : " + (e - s));
+			System.out.println("[Con] time : " + (e - s));
 		}
 
 		return "OK";

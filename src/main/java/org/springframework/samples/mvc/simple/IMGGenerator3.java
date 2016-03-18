@@ -22,9 +22,9 @@ public class IMGGenerator3 {
 	int index = 0;
 
 	public static void main(String args[]) {
-		JedisPool jhdPool = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.205", 19000, 2000000, "a1234");
+		JedisPool jhdPool = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.204", 19000, 2000000, "a1234");
 
-		IMGGenerator3 ig = new IMGGenerator3(jhdPool, "IMG", 200000);
+		IMGGenerator3 ig = new IMGGenerator3(jhdPool, "IMG", 10000);
 		ig.execute();
 
 		jhdPool.destroy();
@@ -115,7 +115,7 @@ public class IMGGenerator3 {
 			String[] cons = line.split("\t");
 
 			String contentid = cons[0];
-			int preint = (Integer.valueOf(contentid) % 18);
+			int preint = (Integer.valueOf(contentid) % 20);
 			String category = cons[1];
 			String url = "http://175.126.56.112/october_11st" + cons[4].substring(cons[4].lastIndexOf("/"));
 			String colors = cons[5];
@@ -136,6 +136,7 @@ public class IMGGenerator3 {
 				continue;
 			}
 
+			String ALL_LIST = preint + ":" + img_list_name + ":ALL";
 			String IMG_LIST = preint + ":" + img_list_name + ":" + category;
 			String ID = preint + ":" + contentid;
 			String Colors = ID + "_color_features";
@@ -148,6 +149,7 @@ public class IMGGenerator3 {
 				return true;
 			}
 
+			pl.rpush(ALL_LIST, ID);
 			pl.rpush(IMG_LIST, ID);
 			pl.set(ID, url);
 			String[] cols = colors.split(",");
@@ -155,14 +157,14 @@ public class IMGGenerator3 {
 			for (int i = 0; i < cols.length; i++) {
 				colls[i] = Double.valueOf(cols[i]);
 			}
-			pl.rpushDouble(Colors, colls);
+			pl.rpushDL(Colors, colls);
 
 			String[] fs = features.split(",");
 			double[] ds = new double[fs.length];
 			for (int i = 0; i < fs.length; i++) {
 				ds[i] = Double.valueOf(fs[i]);
 			}
-			pl.rpushDouble(Features, ds);
+			pl.rpushDL(Features, ds);
 
 			pl.rpush(HD, hds.split(","));
 			pl.rpush(Duplicates, duplicate.split(","));

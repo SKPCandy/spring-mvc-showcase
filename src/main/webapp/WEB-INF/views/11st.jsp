@@ -30,40 +30,37 @@
         <div id="carousel" class="owl_carousel carousels">
 
  
-            <a href="#" data-item="1371936912,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1371936912.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1333460582,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1333460582.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1050137215,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1050137215.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1164240636,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1164240636.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1263849509,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1263849509.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1228988320,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1228988320.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1288625807,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1288625807.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1060433986,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1060433986.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1333518624,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1333518624.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1281171384,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1281171384.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1248162710,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1248162710.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1356058666,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1356058666.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1238644826,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1238644826.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1324210846,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1324210846.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1268597626,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1268597626.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1168155726,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1168155726.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1033685646,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1033685646.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1135260186,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1135260186.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1310023266,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1310023266.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1317709706,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1317709706.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1357380726,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1357380726.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1246028586,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1246028586.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1228676906,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1228676906.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1336180826,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1336180826.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1267035106,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1267035106.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1284120106,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1284120106.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1284089486,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1284089486.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1339558346,127682"  class="carousel"><img src="http://175.126.56.112/october_11st/1339558346.jpg"  class="carousel__image"></a>
+            <a href="#" data-item="1354034426,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1354034426.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1086388586,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1086388586.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1165533606,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1165533606.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1365048606,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1365048606.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1047017306,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1047017306.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1264711726,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1264711726.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1097431626,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1097431626.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1249377666,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1249377666.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1215089086,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1215089086.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1372467046,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1372467046.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1280178486,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1280178486.jpg" class="carousel__image"></a>
+            <a href="#" data-item="1156098146,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1156098146.jpg" class="carousel__image"></a>
 
-            <a href="#" data-item="1329837052,15878" class="carousel"><img src="http://175.126.56.112/october_11st/1329837052.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1364667110,15878" class="carousel"><img src="http://175.126.56.112/october_11st/1364667110.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1365445995,15878" class="carousel"><img src="http://175.126.56.112/october_11st/1365445995.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1364643405,15878" class="carousel"><img src="http://175.126.56.112/october_11st/1364643405.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1367977701,15878" class="carousel"><img src="http://175.126.56.112/october_11st/1367977701.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1375361451,15878" class="carousel"><img src="http://175.126.56.112/october_11st/1375361451.jpg" class="carousel__image"></a>
-            <a href="#" data-item="940287083,15878" class="carousel"><img src="http://175.126.56.112/october_11st/940287083.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1361842537,15878" class="carousel"><img src="http://175.126.56.112/october_11st/1361842537.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1365664974,15878" class="carousel"><img src="http://175.126.56.112/october_11st/1365664974.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1372553603,15878" class="carousel"><img src="http://175.126.56.112/october_11st/1372553603.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1322537095,15878" class="carousel"><img src="http://175.126.56.112/october_11st/1322537095.jpg" class="carousel__image"></a>
-
-            <a href="#" data-item="1365421568,1455" class="carousel"><img src="http://175.126.56.112/october_11st/1365421568.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1347636714,15878" class="carousel"><img src="http:////175.126.56.112/october_11st/1347636714.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1361906094,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1361906094.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1231301968,1612" class="carousel"><img src="http://175.126.56.112/october_11st/1231301968.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1360216839,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1360216839.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1276017349,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1276017349.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1362077000,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1362077000.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1374329288,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1374329288.jpg" class="carousel__image"></a>
-            <a href="#" data-item="1306435438,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1306435438.jpg" class="carousel__image"></a>
-        </div>
+        </div>                    
         <a class="carousel_direction carousel_direction--next carousel_direction--has">&gt;</a>
     </div>
 
