@@ -9,7 +9,9 @@ import java.util.List;
 
 import javax.annotation.PreDestroy;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,7 +22,7 @@ import com.skplanet.mosaic.Pipeline;
 import com.skplanet.mosaic.Plamosaic;
 import com.skplanet.mosaic.PlamosaicPool;
 
-import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Response;
 import redis.clients.spatial.model.Img;
 
@@ -32,13 +34,7 @@ public class DLController {
 
 	// String stringUrlPrefix = "http://175.126.56.112:15003/mosaic_request_handler?url=";
 
-	final int shardNumber = 20;
-
-	String[] items = { "6:1356058666", "6:1238644826", "6:1324210846", "6:1268597626", "6:1168155726", "6:1033685646", "6:1135260186",
-			"6:1310023266", "6:1317709706", "6:1357380726", "6:1246028586", "6:1228676906", "6:1336180826", "6:1267035106", "6:1284120106",
-			"6:1284089486", "6:1339558346", "6:1354034426", "6:1086388586", "6:1165533606", "6:1365048606", "6:1047017306", "6:1264711726",
-			"6:1097431626", "6:1249377666", "6:1215089086", "6:1372467046", "6:1280178486", "6:1156098146", "6:1338187046",
-			"6:1096762086" };
+	final int shardNumber = 30;
 
 	@PreDestroy
 	public void release() {
@@ -59,17 +55,30 @@ public class DLController {
 		List<String> signatures;
 		signatures = jedis.lrange(shid + ":" + itemkey + "_signatures", 0, -1);
 		final List<Double> orgin = jedis.lrangeDL(shid + ":" + itemkey + "_color_features", 0, -1);
+
+		// signatures temp key
+		Pipeline pl = jedis.pipelined();
+		pl.setModeDL(true);
+		long s = System.currentTimeMillis();
+
+		// for (int i = 0; i < shardNumber; i++) {
+		// pl.rpush(i + ":" + itemkey + "_" + s, signatures.toArray(new String[0]));
+		// }
+
 		if (signatures.size() == 0) {
 			return "nothing";
 		}
 
-		Pipeline pl = jedis.pipelined();
-
 		List<Response<List<Img>>> rssList = new ArrayList<Response<List<Img>>>();
-		long s = System.currentTimeMillis();
 		for (int i = 0; i < shardNumber; i++) {
 			rssList.add(pl.hdistByList(i + ":IMG:" + category, count, signatures.toArray(new String[0])));
 		}
+
+		// String[] delkeys = new String[shardNumber];
+		// for (int i = 0; i < shardNumber; i++) {
+		// delkeys[i] = i + ":" + itemkey + "_" + s;
+		// }
+		// pl.del(delkeys);
 
 		pl.sync();
 		long e = System.currentTimeMillis();
@@ -186,19 +195,37 @@ public class DLController {
 		features = jedis.lrangeDL(shid + ":" + itemkey + "_features", 0, -1);
 
 		Pipeline pl = jedis.pipelined();
+		pl.setModeDL(true);
+
+		long s = System.currentTimeMillis();
+
+		// for (int i = 0; i < shardNumber; i++) {
+		// pl.rpushDL(i + ":" + itemkey + "_" + s, ArrayUtils.toPrimitive(features.toArray(new Double[0])));
+		// }
+
+		if (features.size() == 0) {
+			return "nothing";
+		}
+
 		List<Response<List<Img>>> rssList = new ArrayList<Response<List<Img>>>();
 
-		double[] fslist = new double[features.size()];
-		for (int i = 0; i < features.size(); i++) {
-			fslist[i] = features.get(i);
-		}
-		long s = System.currentTimeMillis();
+		// double[] fslist = new double[features.size()];
+		// for (int i = 0; i < features.size(); i++) {
+		// fslist[i] = features.get(i);
+		// }
 		for (int i = 0; i < shardNumber; i++) {
-			rssList.add(pl.udistByList(i + ":IMG:" + category, count, fslist));
+			rssList.add(pl.udistByList(i + ":IMG:" + category, count, ArrayUtils.toPrimitive(features.toArray(new Double[0]))));
 		}
+
+		// String[] delkeys = new String[shardNumber];
+		// for (int i = 0; i < shardNumber; i++) {
+		// delkeys[i] = i + ":" + itemkey + "_" + s;
+		// }
+		// pl.del(delkeys);
 
 		pl.sync();
 		long e = System.currentTimeMillis();
+		System.out.println("[Con] queryud :" + (e - s));
 
 		List<Img> rss = new ArrayList<Img>();
 		for (Response<List<Img>> rs : rssList) {
@@ -261,16 +288,27 @@ public class DLController {
 		features.addAll(jedis.lrangeDL(shid + ":" + itemkey + "_features", 0, -1));
 
 		Pipeline pl = jedis.pipelined();
-		pl = jedis.pipelined();
-		List<Response<List<Img>>> rssList = new ArrayList<Response<List<Img>>>();
+		pl.setModeDL(true);
+
 		long s = System.currentTimeMillis();
 
-		double[] fslist = new double[features.size()];
-		for (int i = 0; i < features.size(); i++) {
-			fslist[i] = features.get(i);
+		// for (int i = 0; i < shardNumber; i++) {
+		// pl.rpushDL(i + ":" + itemkey + "_" + s, ArrayUtils.toPrimitive(features.toArray(new Double[0])));
+		// }
+
+		if (features.size() == 0) {
+			return "nothing";
 		}
+
+		// double[] fslist = new double[features.size()];
+		// for (int i = 0; i < features.size(); i++) {
+		// fslist[i] = features.get(i);
+		// }
+
+		List<Response<List<Img>>> rssList = new ArrayList<Response<List<Img>>>();
+
 		for (int i = 0; i < shardNumber; i++) {
-			rssList.add(pl.csimuByList(i + ":IMG:" + category, count, fslist));
+			rssList.add(pl.csimuByList(i + ":IMG:" + category, count, ArrayUtils.toPrimitive(features.toArray(new Double[0]))));
 		}
 
 		pl.sync();
@@ -393,6 +431,44 @@ public class DLController {
 
 			long e = System.currentTimeMillis();
 			System.out.println("[Con] time : " + (e - s));
+		}
+
+		return "OK";
+	}
+
+	@RequestMapping(value = "/test", produces = "application/json; charset=utf8")
+	public @ResponseBody String test(@RequestParam(value = "ip") String ip, @RequestParam(value = "port") int port) {
+		JedisPool jhdPool = new JedisPool(new GenericObjectPoolConfig(), ip, port, 2000000, "1234", 11);
+		try {
+			IMGGenerator4 ig = new IMGGenerator4(jhdPool, "IMG", 200000);
+			// for (int i = 0; i < 20; i++) {
+			// ig.call();
+			// }
+			ig.call3();
+			ig.call4();
+		} catch (RuntimeException ex) {
+			throw ex;
+		} finally {
+			jhdPool.destroy();
+		}
+
+		return "OK";
+	}
+
+	@RequestMapping(value = "/test2", produces = "application/json; charset=utf8")
+	public @ResponseBody String test2(@RequestParam(value = "ip") String ip, @RequestParam(value = "port") int port) {
+		JedisPool jhdPool = new JedisPool(new GenericObjectPoolConfig(), ip, port, 2000000, "1234", 11);
+		try {
+			IMGGenerator4 ig = new IMGGenerator4(jhdPool, "IMG", 200000);
+			// for (int i = 0; i < 20; i++) {
+			// ig.call();
+			// }
+			ig.call();
+			ig.call2();
+		} catch (RuntimeException ex) {
+			throw ex;
+		} finally {
+			jhdPool.destroy();
 		}
 
 		return "OK";

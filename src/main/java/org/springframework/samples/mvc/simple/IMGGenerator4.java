@@ -5,12 +5,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.List;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
+import redis.clients.spatial.model.Img;
 
 public class IMGGenerator4 {
 
@@ -22,10 +25,13 @@ public class IMGGenerator4 {
 	int index = 0;
 
 	public static void main(String args[]) {
-		JedisPool jhdPool = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.204", 19000, 2000000, "a1234");
+		JedisPool jhdPool = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.203", 29000, 2000000, "1234", 11);
 
 		IMGGenerator4 ig = new IMGGenerator4(jhdPool, "IMG", 200000);
-		ig.execute();
+		for (int i = 0; i < 20; i++) {
+			ig.call();
+
+		}
 
 		jhdPool.destroy();
 	}
@@ -36,6 +42,104 @@ public class IMGGenerator4 {
 		this.img_list_name = img_list_name;
 		this.maxsize = maxsize;
 
+	}
+
+	public void call() {
+		Jedis jedis = this.pPool.getResource();
+		try {
+			List<Double> sel = jedis.lrangeDL("0:1364597920_features", 0, -1);
+			List<String> hsel = jedis.lrange("0:1364597920_signatures", 0, -1);
+			Double[] ss = sel.toArray(new Double[0]);
+			System.out.println(sel.size());
+			List<Img> result = jedis.csimuByList("0:IMG:127682", 10, ArrayUtils.toPrimitive(ss));
+			for (Img img : result) {
+				System.out.println(img.toString());
+			}
+			result = jedis.udistByList("0:IMG:127682", 10, ArrayUtils.toPrimitive(ss));
+			for (Img img : result) {
+				System.out.println(img.toString());
+			}
+			String[] hss = hsel.toArray(new String[0]);
+			result = jedis.hdistByList("0:IMG:127682", 10, hss);
+			for (Img img : result) {
+				System.out.println(img.toString());
+			}
+		} catch (RuntimeException ex) {
+			throw ex;
+		} finally {
+			this.pPool.returnResource(jedis);
+		}
+	}
+
+	public void call2() {
+		Jedis jedis = this.pPool.getResource();
+		try {
+			List<Double> sel = jedis.lrangeDL("0:1364597920_features", 0, -1);
+			List<String> hsel = jedis.lrange("0:1364597920_signatures", 0, -1);
+			Double[] ss = sel.toArray(new Double[0]);
+			System.out.println(sel.size());
+			List<Img> result = jedis.csimuByMember("0:IMG:127682", 10, "0:1364597920_features");
+			for (Img img : result) {
+				System.out.println(img.toString());
+			}
+			result = jedis.udistByMember("0:IMG:127682", 10, "0:1364597920_features");
+			for (Img img : result) {
+				System.out.println(img.toString());
+			}
+			String[] hss = hsel.toArray(new String[0]);
+			result = jedis.hdistByMember("0:IMG:127682", 10, "0:1364597920_signatures");
+			for (Img img : result) {
+				System.out.println(img.toString());
+			}
+		} catch (RuntimeException ex) {
+			throw ex;
+		} finally {
+			this.pPool.returnResource(jedis);
+		}
+	}
+
+	public void call3() {
+		Jedis jedis = this.pPool.getResource();
+		try {
+			List<Double> sel = jedis.lrangeDL("0:1364597920_features", 0, -1);
+			List<String> hsel = jedis.lrange("0:1364597920_signatures", 0, -1);
+			Double[] ss = sel.toArray(new Double[0]);
+			System.out.println(sel.size());
+			List<Img> result = jedis.csimuByList("0:IMG:127682", 10, ArrayUtils.toPrimitive(ss));
+			for (Img img : result) {
+				System.out.println(img.toString());
+			}
+			result = jedis.udistByList("0:IMG:127682", 10, ArrayUtils.toPrimitive(ss));
+			for (Img img : result) {
+				System.out.println(img.toString());
+			}
+		} catch (RuntimeException ex) {
+			throw ex;
+		} finally {
+			this.pPool.returnResource(jedis);
+		}
+	}
+
+	public void call4() {
+		Jedis jedis = this.pPool.getResource();
+		try {
+			List<Double> sel = jedis.lrangeDL("0:1364597920_features", 0, -1);
+			List<String> hsel = jedis.lrange("0:1364597920_signatures", 0, -1);
+			Double[] ss = sel.toArray(new Double[0]);
+			System.out.println(sel.size());
+			List<Img> result = jedis.csimuByMember("0:IMG:127682", 10, "0:1364597920_features");
+			for (Img img : result) {
+				System.out.println(img.toString());
+			}
+			result = jedis.udistByMember("0:IMG:127682", 10, "0:1364597920_features");
+			for (Img img : result) {
+				System.out.println(img.toString());
+			}
+		} catch (RuntimeException ex) {
+			throw ex;
+		} finally {
+			this.pPool.returnResource(jedis);
+		}
 	}
 
 	public void execute() {
