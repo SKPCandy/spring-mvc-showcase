@@ -23,15 +23,13 @@ public class IMGGenerator4 {
 	String img_list_name;
 	long maxsize;
 	int index = 0;
+	int shardNum = 30;
 
 	public static void main(String args[]) {
-		JedisPool jhdPool = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.203", 29000, 2000000, "1234", 11);
+		JedisPool jhdPool = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.204", 19000, 2000000, "a1234");
 
 		IMGGenerator4 ig = new IMGGenerator4(jhdPool, "IMG", 200000);
-		for (int i = 0; i < 20; i++) {
-			ig.call();
-
-		}
+		ig.execute();
 
 		jhdPool.destroy();
 	}
@@ -219,7 +217,7 @@ public class IMGGenerator4 {
 			String[] cons = line.split("\t");
 
 			String contentid = cons[0];
-			int preint = (Integer.valueOf(contentid) % 20);
+			int preint = (Integer.valueOf(contentid) % shardNum);
 			String category = cons[1];
 			String url = "http://175.126.56.112/october_11st" + cons[4].substring(cons[4].lastIndexOf("/"));
 			String colors = cons[5];

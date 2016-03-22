@@ -21,15 +21,18 @@
             <option value="1455">1455</option>
             <option value="15878">15878</option>
             <option value="127682">127682</option>
+            <option value="127688">127688</option>
             <option value="1612">1612</option>
             <option value="15993">15993</option>
+            <option value="252021">252021</option>
+            <option value="252022">252022</option>
+            <option value="930644">930644</option>
+            <option value="672020">"672020"</option>
         </select>
     </div>
     <div class="carousel_container">
         <a class="carousel_direction carousel_direction--prev carousel_direction--has">&lt;</a>
         <div id="carousel" class="owl_carousel carousels">
-
- 
             <a href="#" data-item="1356058666,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1356058666.jpg" class="carousel__image"></a>
             <a href="#" data-item="1238644826,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1238644826.jpg" class="carousel__image"></a>
             <a href="#" data-item="1324210846,127682" class="carousel"><img src="http://175.126.56.112/october_11st/1324210846.jpg" class="carousel__image"></a>

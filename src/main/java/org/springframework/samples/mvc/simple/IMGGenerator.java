@@ -18,6 +18,7 @@ public class IMGGenerator implements Runnable {
 	int signatures = 144;
 	String ip;
 	int port;
+	int shrdNum = 30;
 
 	public IMGGenerator(String img_list_name, long maxsize, String ip, int port) {
 		this.pPool = new JedisPool(new GenericObjectPoolConfig(), ip, port, 200000, "1234", 11);
@@ -40,7 +41,7 @@ public class IMGGenerator implements Runnable {
 				jedis.rpush(allKeys, klist.toArray(new String[0]));
 			}
 
-			// 
+			//
 			// jedis.rpush(allKeys, klist.toArray(new String[0]));
 
 			// for (int i = 0; i < klist.size(); i++) {
@@ -88,7 +89,7 @@ public class IMGGenerator implements Runnable {
 		} finally {
 			pPool.returnResource(jedis);
 		}
-		
+
 	}
 
 	public static void main(String args[]) {

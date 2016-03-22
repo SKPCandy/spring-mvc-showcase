@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import javax.annotation.PreDestroy;
 
@@ -22,6 +23,7 @@ import com.skplanet.mosaic.Pipeline;
 import com.skplanet.mosaic.Plamosaic;
 import com.skplanet.mosaic.PlamosaicPool;
 
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Response;
 import redis.clients.spatial.model.Img;
@@ -517,6 +519,30 @@ public class DLController {
 		}
 
 		return result;
+	}
+
+	@RequestMapping(value = "/total", produces = "application/json; charset=utf8")
+	public @ResponseBody String total() {
+		String[] keys = { "ALL", "127682", "127688", "1455", "15878", "15993", "1612", "252021", "930644" };
+
+		JedisPool jpool = new JedisPool(new GenericObjectPoolConfig(), "172.19.114.204", 19000, 20000, "a1234");
+		Jedis jedis = jpool.getResource();
+		StringBuffer sb = new StringBuffer("{ ");
+		int j = 0;
+		for (String kk : keys) {
+			int csize = 0;
+			for (int i = 0; i < shardNumber; i++) {
+				csize += jedis.llen(i + ":IMG:" + kk);
+			}
+			if (j++ != 0) {
+				sb.append(",");
+			}
+			sb.append("\"" + kk + "\" :" + csize);
+		}
+
+		sb.append("}");
+
+		return sb.toString();
 	}
 
 	// @RequestMapping(value = "/loadImg", produces = "application/json; charset=utf8")
